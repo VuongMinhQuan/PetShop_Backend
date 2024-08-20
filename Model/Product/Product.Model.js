@@ -3,14 +3,6 @@ const { Schema } = mongoose;
 
 const productSchema = new Schema(
   {
-    _id: {
-      type: Schema.Types.ObjectId,
-      auto: true, 
-    },
-    product_Id: {
-      type: Schema.Types.ObjectId,
-      required: true, 
-    },
     NAME: {
       type: String,
       required: true, 
@@ -38,12 +30,10 @@ const productSchema = new Schema(
     CREATED_AT: {
       type: Date,
       default: Date.now, 
-      required: true, 
     },
     UPDATE_AT: {
       type: Date,
       default: Date.now, 
-      required: true, 
     },
     DISCOUNT: {
       type: Number,

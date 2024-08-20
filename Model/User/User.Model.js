@@ -24,14 +24,33 @@ const userSchema = new Schema(
         type: Boolean,
         default: false,
       },
-      STAFF: {
-        type: Boolean,
-        default: false,
-      },
+      // STAFF: {
+      //   type: Boolean,
+      //   default: false,
+      // },
     },
+    OTP: [
+      {
+        TYPE: {
+          type: String,
+        },
+        CODE: {
+          type: String,
+        },
+        TIME: {
+          type: Date,
+        },
+        EXP_TIME: {
+          type: Date,
+        },
+        CHECK_USING: {
+          type: Boolean,
+        },
+      },
+    ],
     ADDRESS: {
       type: String,
-      required: false,
+      required: true,
     },
     GENDER: {
       type: String,
@@ -39,12 +58,19 @@ const userSchema = new Schema(
     },
     IS_BLOCKED: {
       TIME: {
-        type: Date
+        type: Date,
       },
       CHECK: {
         type: Boolean,
-        default: false
+        default: false,
       },
+      BLOCK_BY_USER_ID: {
+        type: Schema.Types.ObjectId,
+      },
+      _id: false,
+    },
+    IS_ACTIVATED: {
+      type: Boolean,
     },
   },
   {
