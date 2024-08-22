@@ -24,10 +24,6 @@ const userSchema = new Schema(
         type: Boolean,
         default: false,
       },
-      // STAFF: {
-      //   type: Boolean,
-      //   default: false,
-      // },
     },
     OTP: [
       {

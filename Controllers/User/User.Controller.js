@@ -1,3 +1,4 @@
+const USER_MODEL = require("../../Model/User/User.Model");
 const USER_SERVICE = require("../../Service/User/User.Service");
 // const { registerValidate } = require('../../Model/User/validate/validateUser');
 const USER_VALIDATES = require("../../Model/User/validate/validateUser");
@@ -5,7 +6,6 @@ const MailQueue = require("../../Utils/sendMail");
 class USER_CONTROLLER {
   registerUser = async (req, res) => {
     const payload = req.body;
-
     const otpType = "create_account";
     // Validate dữ liệu đầu vào
     const { error, value } = USER_VALIDATES.registerValidate.validate(payload);
@@ -17,7 +17,9 @@ class USER_CONTROLLER {
       }, {});
       return res.status(400).json({ errors });
     }
+
     const { EMAIL, PHONE_NUMBER } = value;
+
     try {
       // Kiểm tra xem người dùng đã tồn tại chưa
       const checkUserExists = await USER_SERVICE.checkUserExists(
@@ -39,7 +41,6 @@ class USER_CONTROLLER {
       const { PASSWORD, ...userWithoutPassword } = newUser;
       return res.status(201).json({
         success: true,
-        message: "Đăng ký người dùng thành công!!!",
         message:
           "Đăng ký người dùng thành công. Vui lòng kiểm tra email để xác thực.",
         user: userWithoutPassword,
@@ -131,11 +132,11 @@ class USER_CONTROLLER {
   resetPassword = async (req, res) => {
     const { email, otp, newPassword } = req.body;
     try {
-      const isValid = await MailService.verifyOTP(email, otp, "reset_password");
+      const isValid = await MailQueue.verifyOTP(email, otp, "reset_password");
       if (!isValid) {
         return res.status(500).json({ error: "Invalid or expired OTP." });
       }
-      await USER_SERVICE.resetPassword(email, newPassword);
+      await USER_SERVICE.resetPassword(email, newPassword, otp);
       return res
         .status(200)
         .json({ message: "Password reset was successfully." });
@@ -164,6 +165,13 @@ class USER_CONTROLLER {
         });
       }
 
+      if (!user.IS_ACTIVATED) {
+        return res.status(403).json({
+          success: false,
+          message: "Tài khoản chưa được kích hoạt.",
+        });
+      }
+
       const isPasswordValid = await USER_SERVICE.checkPassword(
         payload.PASSWORD,
         user.PASSWORD
@@ -183,8 +191,8 @@ class USER_CONTROLLER {
 
       return res.status(200).json({
         success: true,
-        message: user,
         metadata: accessToken,
+        message: user,
       });
     } catch (err) {
       console.error("Error logging in:", err);
@@ -195,5 +203,60 @@ class USER_CONTROLLER {
       });
     }
   };
+
+  getUsers = async (req, res) => {
+    try {
+      const { tabStatus, page = 1, limit = 10, search = "" } = req.query;
+
+      const result = await USER_SERVICE.getUsers(
+        tabStatus,
+        parseInt(page),
+        parseInt(limit),
+        search
+      );
+
+      res.status(200).json({
+        success: true,
+        data: result.users,
+        totalPages: result.totalPages,
+        totalCount: result.totalCount,
+      });
+    } catch (err) {
+      res.status(500).json({
+        success: false,
+        message: "Lỗi khi truy vấn người dùng.",
+        error: err.message,
+      });
+    }
+  };
+
+  blockUser = async (req, res) => {
+    const payload = req.body;
+    const { userId } = payload;
+    const blocked_byuserid = req.user_id;
+
+    // Validate userId
+    const { error } = USER_VALIDATES.validateUserId(userId);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    try {
+      const updatedUser = await USER_SERVICE.blockUser(
+        userId,
+        payload.IS_BLOCKED,
+        blocked_byuserid
+      );
+
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
 }
+
 module.exports = new USER_CONTROLLER();

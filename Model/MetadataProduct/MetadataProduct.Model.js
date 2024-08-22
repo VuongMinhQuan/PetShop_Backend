@@ -3,10 +3,6 @@ const { Schema } = mongoose;
 
 const metadataProductSchema = new Schema(
   {
-    _id: {
-      type: Schema.Types.ObjectId,
-      auto: true,
-    },
     PRODUCT_ID: {
       type: String,
       required: true,

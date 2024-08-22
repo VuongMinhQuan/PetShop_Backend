@@ -103,6 +103,23 @@ class USER_VALIDATES {
         "any.required": "Mật khẩu là bắt buộc.",
       }),
   });
+
+  static validateUserId(userId) {
+    const schema = Joi.string()
+      .custom((value, helpers) => {
+        if (!Types.ObjectId.isValid(value)) {
+          return helpers.error("any.invalid");
+        }
+        return value;
+      }, "ObjectId validation")
+      .required()
+      .messages({
+        "any.invalid": "ID người dùng không hợp lệ.",
+        "any.required": "ID người dùng là bắt buộc.",
+      });
+
+    return schema.validate(userId);
+  }
 }
 
 module.exports = USER_VALIDATES;
