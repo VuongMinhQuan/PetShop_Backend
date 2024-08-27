@@ -28,5 +28,6 @@ router.post(
   authorizeRoles("ADMIN"),
   USER_CONTROLLER.blockUser
 );
+router.post("/logout", USER_CONTROLLER.logout);
 
 module.exports = router;

@@ -63,11 +63,28 @@ class USER_SERVICE {
     }
   }
 
+  generateRefreshToken = async (userId) => {
+    const secret = process.env.REFRESH_TOKEN_SECRET;
+    const expiresIn = "30d";
+    const refreshToken = jwt.sign({ userId }, secret, { expiresIn });
+    return refreshToken;
+  };
+  // Hàm cấp phát lại refresh token
+  resetRefreshToken = async (oldRefreshToken) => {
+    const secret = process.env.REFRESH_TOKEN_SECRET;
+    const decoded = jwt.verify(oldRefreshToken, secret);
+
+    // Tạo một refresh token mới
+    const newRefreshToken = generateRefreshToken(decoded.userId);
+    return newRefreshToken;
+  };
+
   login = async (payload) => {
     const secret = process.env.ACCESS_TOKEN_SECRET;
     const expiresIn = "5h";
     const accessToken = jwt.sign(payload, secret, { expiresIn });
-    return accessToken;
+    const refreshToken = await this.generateRefreshToken(payload.userId);
+    return { accessToken, refreshToken };
   };
 
   async getUserInfo(user_id) {

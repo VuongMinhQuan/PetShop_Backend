@@ -3,6 +3,7 @@ const USER_SERVICE = require("../../Service/User/User.Service");
 // const { registerValidate } = require('../../Model/User/validate/validateUser');
 const USER_VALIDATES = require("../../Model/User/validate/validateUser");
 const MailQueue = require("../../Utils/sendMail");
+const COOKIE_OPTIONS = require("../../Config/cookieOptions");
 class USER_CONTROLLER {
   registerUser = async (req, res) => {
     const payload = req.body;
@@ -187,11 +188,12 @@ class USER_CONTROLLER {
       const data_sign = {
         userId: user._id,
       };
-      const accessToken = await USER_SERVICE.login(data_sign);
-
+      const { accessToken, refreshToken } = await USER_SERVICE.login(data_sign);
+      // Thiết lập refresh token vào cookie
+      res.cookie("refreshToken", refreshToken, COOKIE_OPTIONS);
       return res.status(200).json({
         success: true,
-        metadata: accessToken,
+        accessToken: accessToken,
         message: user,
       });
     } catch (err) {
@@ -201,6 +203,45 @@ class USER_CONTROLLER {
         message: "Đăng nhập thất bại.",
         error: err.message,
       });
+    }
+  };
+
+  logout = async (req, res) => {
+    res.clearCookie("refreshToken", COOKIE_OPTIONS); // Xóa cookie chứa refresh token
+    res.status(200).json({ message: "Logged out successfully" });
+  };
+
+  resetRefreshToken = async (req, res) => {
+    try {
+      const { refreshToken } = req.cookies;
+
+      if (!refreshToken) {
+        return res.status(401).json({ message: "Refresh token is required" });
+      }
+
+      // Cấp phát lại refresh token và access token mới
+      const newRefreshToken = await USER_SERVICE.resetRefreshToken(
+        refreshToken
+      );
+
+      // Tạo payload cho access token mới
+      const decoded = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET
+      );
+      const accessToken = jwt.sign(
+        { userId: decoded.userId },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "5h" }
+      );
+
+      // Cập nhật cookie với refresh token mới
+      res.cookie("refreshToken", newRefreshToken, COOKIE_OPTIONS);
+
+      // Gửi access token mới trong phản hồi
+      return res.status(200).json({ accessToken });
+    } catch (error) {
+      return res.status(401).json({ message: error.message });
     }
   };
 
@@ -253,6 +294,22 @@ class USER_CONTROLLER {
       }
 
       res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  getUserById = async (req, res) => {
+    try {
+      const userId = req.params.id;
+
+      const user = await USER_SERVICE.getUserInfo(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.status(200).json(user);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
