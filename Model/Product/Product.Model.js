@@ -1,47 +1,59 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
+const ImageSchema = new Schema(
+  {
+    path: {
+      type: String,
+      required: true, // Đường dẫn tới file ảnh trên máy chủ hoặc URL
+    },
+    description: {
+      type: String,
+    },
+    order: {
+      type: Number,
+    },
+  },
+  { _id: false }
+);
+
 const productSchema = new Schema(
   {
     NAME: {
       type: String,
-      required: true, 
+      required: true,
     },
     PRICE: {
       type: Number,
-      required: true, 
+      required: true,
     },
     DESCRIPTION: {
       type: String,
-      required: false, 
     },
     TYPE: {
       type: String,
-      required: true, 
+      required: true,
     },
-    IMAGE: {
-      type: [String], 
-      required: false, 
-    },
+    IMAGES: [ImageSchema],
     QUANTITY: {
       type: Number,
-      required: true, 
+      required: true,
     },
     CREATED_AT: {
       type: Date,
-      default: Date.now, 
+      default: Date.now,
     },
     UPDATE_AT: {
       type: Date,
-      default: Date.now, 
+      default: Date.now,
     },
     DISCOUNT: {
       type: Number,
-      required: false, 
+      required: false,
     },
   },
   {
-    timestamps: false, 
+    timestamps: false,
   }
 );
 

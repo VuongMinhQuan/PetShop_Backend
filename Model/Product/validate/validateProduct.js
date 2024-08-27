@@ -1,56 +1,72 @@
 const Joi = require("joi");
 
-const productValidate = Joi.object({
-  NAME: Joi.string().trim().min(3).max(100).required().messages({
-    "string.base": "Tên sản phẩm phải là một chuỗi ký tự.",
-    "string.empty": "Tên sản phẩm không được để trống.",
-    "string.min": "Tên sản phẩm phải có ít nhất {#limit} ký tự.",
-    "string.max": "Tên sản phẩm phải có nhiều nhất {#limit} ký tự.",
-    "any.required": "Tên sản phẩm là bắt buộc.",
-  }),
+class PRODUCT_VALIDATE {
+  static createProduct() {
+    return Joi.object({
+      NAME: Joi.string().trim().min(3).max(100).required().messages({
+        "string.base": "Tên sản phẩm phải là một chuỗi ký tự.",
+        "string.empty": "Tên sản phẩm không được để trống.",
+        "string.min": "Tên sản phẩm phải có ít nhất {#limit} ký tự.",
+        "string.max": "Tên sản phẩm phải có nhiều nhất {#limit} ký tự.",
+        "any.required": "Tên sản phẩm là bắt buộc.",
+      }),
 
-  PRICE: Joi.number().positive().required().messages({
-    "number.base": "Giá sản phẩm phải là một số.",
-    "number.positive": "Giá sản phẩm phải là một số dương.",
-    "any.required": "Giá sản phẩm là bắt buộc.",
-  }),
+      PRICE: Joi.number().positive().required().messages({
+        "number.base": "Giá sản phẩm phải là một số.",
+        "number.positive": "Giá sản phẩm phải là một số dương.",
+        "any.required": "Giá sản phẩm là bắt buộc.",
+      }),
 
-  QUANTITY: Joi.number().integer().min(0).required().messages({
-    "number.base": "Số lượng sản phẩm phải là một số.",
-    "number.integer": "Số lượng sản phẩm phải là một số nguyên.",
-    "number.min": "Số lượng sản phẩm không được nhỏ hơn {#limit}.",
-    "any.required": "Số lượng sản phẩm là bắt buộc.",
-  }),
+      QUANTITY: Joi.number().integer().min(0).required().messages({
+        "number.base": "Số lượng sản phẩm phải là một số.",
+        "number.integer": "Số lượng sản phẩm phải là một số nguyên.",
+        "number.min": "Số lượng sản phẩm không được nhỏ hơn {#limit}.",
+        "any.required": "Số lượng sản phẩm là bắt buộc.",
+      }),
 
-  DESCRIPTION: Joi.string().allow(null, "").messages({
-    "string.base": "Mô tả sản phẩm phải là một chuỗi ký tự.",
-  }),
+      DESCRIPTION: Joi.string().allow(null, "").messages({
+        "string.base": "Mô tả sản phẩm phải là một chuỗi ký tự.",
+      }),
 
-  TYPE: Joi.string().trim().required().messages({
-    "string.base": "Loại sản phẩm phải là một chuỗi ký tự.",
-    "string.empty": "Loại sản phẩm không được để trống.",
-    "any.required": "Loại sản phẩm là bắt buộc.",
-  }),
+      TYPE: Joi.string().trim().required().messages({
+        "string.base": "Loại sản phẩm phải là một chuỗi ký tự.",
+        "string.empty": "Loại sản phẩm không được để trống.",
+        "any.required": "Loại sản phẩm là bắt buộc.",
+      }),
 
-  CREATED_AT: Joi.date()
-    .default(() => new Date(), "Thời gian tạo mặc định")
-    .messages({
-      "date.base": "Thời gian tạo phải là một ngày hợp lệ.",
-    }),
+      CREATED_AT: Joi.date().default(() => new Date()),
 
-  UPDATE_AT: Joi.date()
-    .default(() => new Date(), "Thời gian cập nhật mặc định")
-    .messages({
-      "date.base": "Thời gian cập nhật phải là một ngày hợp lệ.",
-    }),
+      UPDATE_AT: Joi.date().default(() => new Date()),
 
-  DISCOUNT: Joi.number().min(0).max(100).allow(null).messages({
-    "number.base": "Giảm giá phải là một số.",
-    "number.min": "Giảm giá không được nhỏ hơn {#limit}.",
-    "number.max": "Giảm giá không được lớn hơn {#limit}.",
-  }),
-});
+      DISCOUNT: Joi.number().min(0).max(100).allow(null).messages({
+        "number.base": "Giảm giá phải là một số.",
+        "number.min": "Giảm giá không được nhỏ hơn {#limit}.",
+        "number.max": "Giảm giá không được lớn hơn {#limit}.",
+      }),
 
-module.exports = {
-  productValidate,
-};
+      IMAGES: Joi.array()
+        .items(
+          Joi.object({
+            path: Joi.string().uri().required().messages({
+              "string.base": "Đường dẫn ảnh phải là một chuỗi ký tự.",
+              "string.uri": "Đường dẫn ảnh phải là một URL hợp lệ.",
+              "any.required": "Đường dẫn ảnh là bắt buộc.",
+            }),
+            description: Joi.string().allow(null, "").messages({
+              "string.base": "Mô tả ảnh phải là một chuỗi ký tự.",
+            }),
+            order: Joi.number().integer().messages({
+              "number.base": "Thứ tự ảnh phải là một số nguyên.",
+              "number.integer": "Thứ tự ảnh phải là một số nguyên.",
+            }),
+          })
+        )
+        .allow(null)
+        .messages({
+          "array.base": "IMAGES phải là một mảng.",
+        }),
+    });
+  }
+}
+
+module.exports = PRODUCT_VALIDATE;

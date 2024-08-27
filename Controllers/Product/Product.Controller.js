@@ -1,20 +1,37 @@
 const PRODUCT_MODEL = require("../../Model/Product/Product.Model");
+const PRODUCT_VALIDATE = require("../../Model/Product/validate/validateProduct");
 const PRODUCT_SERVICE = require("../../Service/Product/Product.Service");
 
 class PRODUCT_CONTROLLER {
-  createProduct = async (req, res) => {
-    const payload = req.body;
-
+  async createProduct(req, res) {
     try {
-      await PRODUCT_SERVICE.createProduct(payload);
-      return res.status(200).json({
+      // Lấy schema từ phương thức static và validate dữ liệu
+      const schema = PRODUCT_VALIDATE.createProduct();
+      const { error, value } = schema.validate(req.body);
+
+      if (error) {
+        const errors = error.details.reduce((acc, current) => {
+          acc[current.context.key] = current.message;
+          return acc;
+        }, {});
+        return res.status(400).json({ errors });
+      }
+
+      const newProduct = await PRODUCT_SERVICE.createProduct(value);
+      return res.status(201).json({
         success: true,
         message: "Tạo sản phẩm thành công!!",
+        data: newProduct,
       });
     } catch (err) {
-      return res.status(500).json({ errors: "Tạo sản phẩm thất bại!!" });
+      console.error("Error creating product:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Tạo sản phẩm không thành công!!",
+        err: err.message,
+      });
     }
-  };
+  }
 
   updateProduct = async (req, res) => {
     try {
@@ -27,12 +44,10 @@ class PRODUCT_CONTROLLER {
       );
 
       if (updatedProduct) {
-        res
-          .status(200)
-          .json({
-            message: "Sản phẩm đã được cập nhật thành công.",
-            data: updatedProduct,
-          });
+        res.status(200).json({
+          message: "Sản phẩm đã được cập nhật thành công.",
+          data: updatedProduct,
+        });
       } else {
         res.status(404).json({ message: "Sản phẩm không tìm thấy." });
       }

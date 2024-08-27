@@ -1,10 +1,18 @@
 const PRODUCT_MODEL = require("../../Model/Product/Product.Model");
 
 class PRODUCT_SERVICE {
-  async createProduct(data) {
-    const newProduct = new PRODUCT_MODEL(data);
-    const result = await newProduct.save();
-    return result.toObject();
+  async createProduct(productData) {
+    const newProduct = new PRODUCT_MODEL({
+      NAME: productData.NAME,
+      PRICE: productData.PRICE,
+      DESCRIPTION: productData.DESCRIPTION,
+      TYPE: productData.TYPE,
+      IMAGES: productData.IMAGES,
+      QUANTITY: productData.QUANTITY,
+      DISCOUNT: productData.DISCOUNT,
+    });
+    const savedProduct = await newProduct.save();
+    return savedProduct.toObject();
   }
 
   async updateProductById(id, productData) {
