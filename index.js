@@ -1,12 +1,26 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
-const port = 3000;
 
+const cors = require("cors");
+const axios = require("axios");
 const dbConnect = require("./Config/dbconnect");
 const route = require("./Router");
 
+const port = process.env.PORT || 3000;
+
+
 dbConnect();
+
+app.use(
+  cors({
+    origin: ["http://localhost:8080", "http://localhost:3000"],
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+    credentials: true,
+    optionsSuccessStatus: 204,
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 app.use(express.json());
 
@@ -24,3 +38,4 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
+

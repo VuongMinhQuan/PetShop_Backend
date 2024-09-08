@@ -28,10 +28,13 @@ class USER_CONTROLLER {
         PHONE_NUMBER
       );
       if (checkUserExists) {
-        return res
-          .status(400)
-          .json({ message: "Email hoặc số điện thoại đã tồn tại." });
-      }
+        return res.status(400).json({
+          errors: {
+            EMAIL: "Email đã tồn tại",
+            PHONE_NUMBER: "Số điện thoại đã tồn tại",
+          },
+        });
+      }  
 
       // Đăng ký người dùng
       const newUser = await USER_SERVICE.registerUser(payload);
@@ -75,9 +78,11 @@ class USER_CONTROLLER {
         return res.status(400).json({ errors: { otp: "Mã OTP đã hết hạn" } });
       }
 
-      res
-        .status(200)
-        .json({ message: "Kích hoạt người dùng thành công!", user });
+      return res.status(201).json({
+        success: true,
+        message: "Kích hoạt người dùng thành công!",
+        user,
+      });
     } catch (error) {
       console.error("Error verifying OTP and activating user:", error);
       res.status(400).json({ errors: { otp: error.message } });
@@ -140,7 +145,7 @@ class USER_CONTROLLER {
       await USER_SERVICE.resetPassword(email, newPassword, otp);
       return res
         .status(200)
-        .json({ message: "Password reset was successfully." });
+        .json({ message: "Thay đổi mật khẩu thành công!" });
     } catch (err) {
       res.status(500).json({ error: "Error resetting password" });
     }
@@ -194,7 +199,7 @@ class USER_CONTROLLER {
       return res.status(200).json({
         success: true,
         accessToken: accessToken,
-        message: user,
+        user,
       });
     } catch (err) {
       console.error("Error logging in:", err);
@@ -314,6 +319,7 @@ class USER_CONTROLLER {
       res.status(500).json({ error: error.message });
     }
   };
+
 }
 
 module.exports = new USER_CONTROLLER();
