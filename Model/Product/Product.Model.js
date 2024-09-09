@@ -51,6 +51,10 @@ const productSchema = new Schema(
       type: Number,
       required: false,
     },
+    IS_DELETED: {
+      type: Boolean,
+      required: false,
+    },
   },
   {
     timestamps: false,

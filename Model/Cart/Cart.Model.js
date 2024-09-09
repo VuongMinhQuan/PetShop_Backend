@@ -3,10 +3,6 @@ const { Schema } = mongoose;
 
 const cartSchema = new Schema(
   {
-    _id: {
-      type: Schema.Types.ObjectId,
-      auto: true,
-    },
     USER_ID: {
       type: Schema.Types.ObjectId,
       required: true,
