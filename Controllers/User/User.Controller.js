@@ -199,7 +199,6 @@ class USER_CONTROLLER {
       return res.status(200).json({
         success: true,
         accessToken: accessToken,
-        user,
       });
     } catch (err) {
       console.error("Error logging in:", err);
