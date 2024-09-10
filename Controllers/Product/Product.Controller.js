@@ -63,15 +63,19 @@ class PRODUCT_CONTROLLER {
     }
   }
 
-  // Lấy sản phẩm theo TYPE, NEWEST hoặc BEST
-  async getProductsByCriteria(req, res) {
+  async getLatestProducts(req, res) {
     try {
-      const criteria = req.query;
-      const products = await PRODUCT_SERVICE.getProductsByCriteria(criteria);
-      res.status(200).json(products);
+      const products = await PRODUCT_SERVICE.getLatestProducts();
+      return res.status(200).json({
+        success: true,
+        data: products
+      }
+       );
     } catch (error) {
-      console.error("Error retrieving products by criteria:", error);
-      res.status(500).json({ error: error.message });
+      console.error("Error retrieving latest products:", error);
+      return res.status(500).json({ 
+        success: false,
+        error: error.message });
     }
   }
 }

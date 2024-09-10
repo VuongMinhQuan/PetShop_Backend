@@ -75,28 +75,19 @@ class PRODUCT_SERVICE {
     }
   }
 
-  // Lấy sản phẩm theo TYPE, NEWEST hoặc BEST
-  // async getProductsByCriteria(criteria) {
-  //   try {
-  //     const { TYPE, NEWEST, BEST } = criteria;
-  //     let query = {};
-
-  //     if (TYPE) {
-  //       query.TYPE = TYPE;
-  //     }
-  //     if (NEWEST) {
-  //       query.NEWEST = NEWEST;
-  //     }
-  //     if (BEST) {
-  //       query.BEST = BEST;
-  //     }
-
-  //     return await PRODUCT_MODEL.find(query).lean();
-  //   } catch (error) {
-  //     console.error("Error retrieving products by criteria:", error);
-  //     throw new Error("Error retrieving products by criteria");
-  //   }
-  // }
+  async getLatestProducts() {
+    try {
+      return await PRODUCT_MODEL.find({
+        IS_DELETED: { $in: [false, null] },
+      })
+        .sort({ createdAt: -1 }) // Sắp xếp giảm dần theo ngày tạo
+        .limit(3) // Giới hạn số lượng sản phẩm
+        .lean();
+    } catch (error) {
+      console.error("Error retrieving latest products:", error);
+      throw new Error("Error retrieving latest products");
+    }
+  }
 }
 
 module.exports = new PRODUCT_SERVICE();

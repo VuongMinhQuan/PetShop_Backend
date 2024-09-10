@@ -57,7 +57,7 @@ const productSchema = new Schema(
     },
   },
   {
-    timestamps: false,
+    timestamps: true,
   }
 );
 
