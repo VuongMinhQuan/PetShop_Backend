@@ -28,11 +28,44 @@ class PRODUCT_VALIDATE {
         "string.base": "Mô tả sản phẩm phải là một chuỗi ký tự.",
       }),
 
-      TYPE: Joi.string().trim().required().messages({
-        "string.base": "Loại sản phẩm phải là một chuỗi ký tự.",
-        "string.empty": "Loại sản phẩm không được để trống.",
-        "any.required": "Loại sản phẩm là bắt buộc.",
-      }),
+      TYPE: Joi.object({
+        mainType: Joi.string()
+          .valid("Animals", "Foods", "Products")
+          .required()
+          .messages({
+            "any.only":
+              "Loại sản phẩm phải là một trong các giá trị: Animals, Foods, Products.",
+            "any.required": "Loại sản phẩm là bắt buộc.",
+          }),
+        subTypes: Joi.array()
+          .items(
+            Joi.string().valid(
+              // Các giá trị hợp lệ cho từng loại chính
+              "Dog",
+              "Cat",
+              "Bird",
+              "Hamster", // for Animals
+              "FDog",
+              "FCat",
+              "FBird",
+              "FHamster", // for Foods
+              "Toy",
+              "Bag",
+              "Cage" // for Products
+            )
+          )
+          .min(1)
+          .required()
+          .messages({
+            "any.only": "Loại phụ phải là một giá trị hợp lệ.",
+            "any.required": "Loại phụ là bắt buộc.",
+          }),
+      })
+        .required()
+        .messages({
+          "object.base": "TYPE phải là một đối tượng.",
+          "any.required": "Loại sản phẩm là bắt buộc.",
+        }),
 
       CREATED_AT: Joi.date().default(() => new Date()),
 

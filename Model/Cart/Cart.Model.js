@@ -1,3 +1,4 @@
+const { required } = require("joi");
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
@@ -6,8 +7,10 @@ const cartSchema = new Schema(
     USER_ID: {
       type: Schema.Types.ObjectId,
       required: true,
+      ref: "User",
     },
-    LIST_PRODUCT: {
+    LIST_PRODUCT: [
+    {  
       PRODUCT_ID: {
         type: Schema.Types.ObjectId,
         required: true,
@@ -16,15 +19,16 @@ const cartSchema = new Schema(
         type: Number,
         required: true,
       },
-    },
+    }, 
+  ],  
     TOTAL_PRICE: {
       type: Number,
-    },
-    CREATED_AT: {
-      type: Date,
       required: true,
-      default: Date.now,
     },
+  },
+    {
+    timestamps: true, // Optional: to add createdAt and updatedAt fields automatically
+    versionKey: false, // Optional: to remove the __v field
   },
 );
 

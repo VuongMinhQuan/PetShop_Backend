@@ -17,6 +17,28 @@ const ImageSchema = new Schema(
   { _id: false }
 );
 
+const typeSchema = new Schema(
+  {
+    mainType: {
+      type: String,
+      enum: ['Animals', 'Foods', 'Products'],
+      required: true,
+    },
+    subTypes: [
+      {
+        type: String,
+        enum: [
+          'Dog', 'Cat', 'Bird', 'Hamster', // for Animals
+          'FDog', 'FCat', 'FBird', 'FHamster', // for Foods
+          'Toy', 'Bag', 'Cage' // for Products
+        ],
+        required: true,
+      },
+    ],
+  },
+    { _id: false }
+);
+
 const productSchema = new Schema(
   {
     NAME: {
@@ -31,7 +53,7 @@ const productSchema = new Schema(
       type: String,
     },
     TYPE: {
-      type: String,
+      type: typeSchema, // Sử dụng trực tiếp Type Schema
       required: true,
     },
     IMAGES: [ImageSchema],
