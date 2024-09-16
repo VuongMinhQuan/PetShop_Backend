@@ -1,16 +1,34 @@
 const PRODUCT_SERVICE = require("../../Service/Product/Product.Service");
+const PRODUCT_VALIDATE = require("../../Model/Product/validate/validateProduct")
 
 class PRODUCT_CONTROLLER {
   // Tạo sản phẩm mới
   async createProduct(req, res) {
     const payload = req.body;
+
+    // Validate dữ liệu đầu vào
+    const { error } = PRODUCT_VALIDATE.createProduct().validate(payload);
+    if (error) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Validation failed",
+          errors: error.details.map((detail) => detail.message),
+        });
+    }
+
     const NAME = payload.NAME;
     try {
+      if (req.files && req.files.length > 0) {
+        const images = req.files.map((file) => ({ path: file.path })); // Lấy đường dẫn tạm thời từ Multer
+        roomData.IMAGES = images;
+      }
       const checkProductExists = await PRODUCT_SERVICE.checkProductExists(NAME);
       if (checkProductExists) {
         return res.status(400).json({ message: "Tên sản phẩm đã tồn tại." });
       }
-      const newProduct = await PRODUCT_SERVICE.createProduct(req.body);
+      const newProduct = await PRODUCT_SERVICE.createProduct(payload);
       res.status(201).json(newProduct);
     } catch (error) {
       console.error("Error creating product:", error);
@@ -41,6 +59,13 @@ class PRODUCT_CONTROLLER {
     try {
       const { productId } = req.params;
       const updateData = req.body;
+
+      // Validate dữ liệu cập nhật nếu cần
+      const { error } = PRODUCT_VALIDATE.createProduct().validate(updateData);
+      if (error) {
+        return res.status(400).json({ message: error.details[0].message });
+      }
+
       const updatedProduct = await PRODUCT_SERVICE.updateProduct(
         productId,
         updateData
@@ -68,14 +93,14 @@ class PRODUCT_CONTROLLER {
       const products = await PRODUCT_SERVICE.getLatestProducts();
       return res.status(200).json({
         success: true,
-        data: products
-      }
-       );
+        data: products,
+      });
     } catch (error) {
       console.error("Error retrieving latest products:", error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        error: error.message });
+        error: error.message,
+      });
     }
   }
 }

@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const metadataProductSchema = new Schema(
+const MetadataProductSchema = new Schema(
   {
     PRODUCT_ID: {
-      type: String,
+      type: Schema.Types.ObjectId,
       required: true,
     },
     TOTAL_QUANTITY: {
@@ -28,7 +28,7 @@ const metadataProductSchema = new Schema(
 
 const MetadataProduct = mongoose.model(
   "MetadataProduct",
-  metadataProductSchema
+  MetadataProductSchema
 );
 
 module.exports = MetadataProduct;

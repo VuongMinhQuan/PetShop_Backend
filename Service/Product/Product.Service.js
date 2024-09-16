@@ -1,4 +1,5 @@
 const PRODUCT_MODEL = require("../../Model/Product/Product.Model");
+const CLOUDINARY = require("../../Config/cloudinaryConfig");
 
 class PRODUCT_SERVICE {
   // Kiểm tra sản phẩm có tồn tại không
@@ -20,14 +21,33 @@ class PRODUCT_SERVICE {
 
   // Tạo sản phẩm mới
   async createProduct(body) {
-    try {
-      const newProduct = new PRODUCT_MODEL(body);
-      const result = await newProduct.save();
-      return result.toObject();
-    } catch (error) {
-      console.error("Error creating product:", error);
-      throw new Error("Error creating product");
+    let uploadedImages = []; // Đảm bảo biến được định nghĩa trước
+    if (body.IMAGES && body.IMAGES.length > 0) {
+      uploadedImages = await Promise.all(
+        body.IMAGES.map(async (image) => {
+          // Kiểm tra nếu là URL hoặc file path cục bộ
+          if (image.startsWith("http")) {
+            // Upload từ URL
+            const uploadResult = await CLOUDINARY.uploader.upload(image);
+            return uploadResult.secure_url;
+          } else {
+            // Upload từ file cục bộ
+            const uploadResult = await CLOUDINARY.uploader.upload(image.path);
+            return uploadResult.secure_url;
+          }
+        })
+      );
+    }    
+    const newProductData = {
+      NAME : body.NAME,
+      PRICE: body.PRICE,
+      DESCRIPTION: body.DESCRIPTION,
+      TYPE: body.TYPE,
+      IMAGES: uploadedImages,
+      QUANTITY: body.QUANTITY,
     }
+    const newProduct = new PRODUCT_MODEL(newProductData);   
+    return await newProduct.save();
   }
 
   // Xoá sản phẩm theo ID

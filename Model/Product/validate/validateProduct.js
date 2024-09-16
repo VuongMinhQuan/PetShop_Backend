@@ -41,7 +41,17 @@ class PRODUCT_VALIDATE {
           .items(
             Joi.string().valid(
               // Các giá trị hợp lệ cho từng loại chính
-              "Dog",
+              "Alaska",
+              "Husky",
+              "Golden",
+              "Bull Pháp",
+              "Corgi",
+              "Poodle",
+              "Pug",
+              "Samoyed",
+              "Cat",
+              "Bird",
+              "Hamster",
               "Cat",
               "Bird",
               "Hamster", // for Animals
@@ -76,27 +86,13 @@ class PRODUCT_VALIDATE {
         "number.min": "Giảm giá không được nhỏ hơn {#limit}.",
         "number.max": "Giảm giá không được lớn hơn {#limit}.",
       }),
-
       IMAGES: Joi.array()
-        .items(
-          Joi.object({
-            path: Joi.string().uri().required().messages({
-              "string.base": "Đường dẫn ảnh phải là một chuỗi ký tự.",
-              "string.uri": "Đường dẫn ảnh phải là một URL hợp lệ.",
-              "any.required": "Đường dẫn ảnh là bắt buộc.",
-            }),
-            description: Joi.string().allow(null, "").messages({
-              "string.base": "Mô tả ảnh phải là một chuỗi ký tự.",
-            }),
-            order: Joi.number().integer().messages({
-              "number.base": "Thứ tự ảnh phải là một số nguyên.",
-              "number.integer": "Thứ tự ảnh phải là một số nguyên.",
-            }),
-          })
-        )
-        .allow(null)
+        .items(Joi.string().uri().required())
+        .optional()
         .messages({
-          "array.base": "IMAGES phải là một mảng.",
+          "array.base": `"IMAGES" phải là một mảng`,
+          "string.base": `"IMAGES" chứa các giá trị phải là chuỗi`,
+          "string.uri": `"IMAGES" chứa các giá trị phải là URL hợp lệ`,
         }),
     });
   }

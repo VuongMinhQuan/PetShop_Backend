@@ -1,21 +1,6 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const ImageSchema = new Schema(
-  {
-    path: {
-      type: String,
-      required: true, // Đường dẫn tới file ảnh trên máy chủ hoặc URL
-    },
-    description: {
-      type: String,
-    },
-    order: {
-      type: Number,
-    },
-  },
-  { _id: false }
-);
 
 const typeSchema = new Schema(
   {
@@ -28,7 +13,7 @@ const typeSchema = new Schema(
       {
         type: String,
         enum: [
-          'Dog', 'Cat', 'Bird', 'Hamster', // for Animals
+          'Alaska', 'Husky', 'Golden', 'Bull Pháp', 'Corgi', 'Poodle', 'Pug', 'Samoyed', 'Cat', 'Bird', 'Hamster', // for Animals
           'FDog', 'FCat', 'FBird', 'FHamster', // for Foods
           'Toy', 'Bag', 'Cage' // for Products
         ],
@@ -56,18 +41,12 @@ const productSchema = new Schema(
       type: typeSchema, // Sử dụng trực tiếp Type Schema
       required: true,
     },
-    IMAGES: [ImageSchema],
+    IMAGES: {
+      type: [String],
+    },
     QUANTITY: {
       type: Number,
       required: true,
-    },
-    CREATED_AT: {
-      type: Date,
-      default: Date.now,
-    },
-    UPDATE_AT: {
-      type: Date,
-      default: Date.now,
     },
     DISCOUNT: {
       type: Number,
