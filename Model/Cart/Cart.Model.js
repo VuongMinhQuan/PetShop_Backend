@@ -21,10 +21,6 @@ const cartSchema = new Schema(
       },
     }, 
   ],  
-    TOTAL_PRICE: {
-      type: Number,
-      required: true,
-    },
   },
     {
     timestamps: true, // Optional: to add createdAt and updatedAt fields automatically

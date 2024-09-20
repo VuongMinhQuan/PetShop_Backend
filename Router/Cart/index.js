@@ -7,9 +7,9 @@ const{
 } = require("../../Middleware/verifyToken");
 
 router.post("/createCart", verifyToken, CART_CONTROLLER.createCart);
-router.post("/getCart", CART_CONTROLLER.getCart);
 router.post("/getCartById", verifyToken, CART_CONTROLLER.getCartByUserId);
-router.put("/updateCart/:cartId", CART_CONTROLLER.updateCart);
+router.put("/updateCart/:cartId", CART_CONTROLLER.updateProductInCart);
+router.post("/removeProduct", verifyToken, CART_CONTROLLER.removeProductFromCart)
 router.put(
   "/addProduct",
   verifyToken,

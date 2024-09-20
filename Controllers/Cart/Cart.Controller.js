@@ -3,102 +3,128 @@ const CART_SERVICE = require("../../Service/Cart/Cart.Service");
 const CART_CONTROLLER = {
   async createCart(req, res) {
     try {
-      const userId = req.user_id;
-      console.log(userId);
-
-      const cartData = req.body;
-      const newCart = await CART_SERVICE.createCart(cartData, userId);
+      const userId = req.user_id; // Lấy user_id từ token hoặc middleware
+      const cart = await CART_SERVICE.createCart(userId);
       return res.status(201).json({
         success: true,
-        data: newCart,
+        data: cart,
       });
     } catch (error) {
-      return res.status(500).json({ message: error.message });
+      console.error("Error creating cart:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Error creating cart.",
+        error: error.message,
+      });
     }
   },
 
-  async updateCart(req, res) {
-    try {
-      const { cartId } = req.params;
-      const updatedData = req.body;
-      const updatedCart = await CART_SERVICE.updateCart(cartId, updatedData);
-      if (!updatedCart) {
-        return res.status(404).json({ message: "Cart not found" });
-      }
-      return res.status(200).json(updatedCart);
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
-    }
-  },
-
+  // Thêm sản phẩm vào giỏ hàng
   async addProductToCart(req, res) {
+    console.log("User ID:", req.user_id);
     try {
-      const userId = req.user_id; // Lấy userId từ request
-      const productItem = req.body; // Dữ liệu sản phẩm gửi lên
+      const { productId, quantity } = req.body; // Lấy productId và quantity từ body
+      const userId = req.user_id; // Lấy userId từ token hoặc middleware
 
-      // Kiểm tra dữ liệu đầu vào
-      if (!userId || !productItem.PRODUCT_ID || !productItem.QUANTITY) {
-        return res.status(400).json({ message: "Invalid input data" });
+      if (!userId || !productId || !quantity) {
+        return res.status(400).json({
+          success: false,
+          message: "User ID, Product ID và Quantity là bắt buộc.",
+        });
       }
-      const updatedCart = await CART_SERVICE.addProductToCart(
+
+      const cart = await CART_SERVICE.addProductToCart(
         userId,
-        productItem
+        productId,
+        quantity
+      );
+      return res.status(200).json({
+        success: true,
+        data: cart,
+      });
+    } catch (error) {
+      console.error("Error adding product to cart:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Error adding product to cart.",
+        error: error.message,
+      });
+    }
+  },
+
+  async removeProductFromCart(req, res) {
+    const userId = req.user_id; // Lấy userId từ token hoặc middleware
+    const { productId } = req.body; // Lấy productId từ body của request
+
+    try {
+      // Gọi hàm removeProductFromCart từ CART_SERVICE để xóa sản phẩm khỏi giỏ hàng
+      const updatedCart = await CART_SERVICE.removeProductFromCart(
+        userId,
+        productId
       );
 
+      // Trả về giỏ hàng đã cập nhật sau khi xóa sản phẩm
       return res.status(200).json({
         success: true,
         data: updatedCart,
       });
     } catch (error) {
-      return res.status(500).json({ message: error.message });
+      // Xử lý lỗi nếu có trong quá trình xóa sản phẩm khỏi giỏ hàng
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
     }
   },
 
-  async removeProductFromCart(req, res) {
+  async updateProductInCart(req, res) {
     try {
-      const { cartId, productId } = req.params;
-      const updatedCart = await CART_SERVICE.removeProductFromCart(
-        cartId,
-        productId
+      const { productId, newQuantity } = req.body; 
+      const userId = req.user_id; 
+
+      const updatedCart = await CART_SERVICE.updateProductInCart(
+        userId,
+        productId,
+        newQuantity
       );
-      if (!updatedCart) {
-        return res.status(404).json({ message: "Cart not found" });
-      }
-      return res.status(200).json(updatedCart);
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
-    }
-  },
 
-  async getCart(req, res) {
-    try {
-      const { cartId } = req.params;
-      const cart = await CART_SERVICE.getCart(cartId);
-      if (!cart) {
-        return res.status(404).json({ message: "Cart not found" });
-      }
-      return res.status(200).json(cart);
+      // Trả về kết quả cho client
+      return res.status(200).json({
+        success: true,
+        message: "Cập nhật sản phẩm trong giỏ hàng thành công!",
+        cart: updatedCart,
+      });
     } catch (error) {
-      return res.status(500).json({ message: error.message });
+      console.error("Error in updateProductInCartController:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update product in cart",
+        error: error.message,
+      });
     }
   },
 
   async getCartByUserId(req, res) {
     try {
-      const userId = req.user_id;
-      console.log(userId);
-      const cart = await CART_SERVICE.getCartByUserId(userId);
+      const userId = req.user_id; // Lấy userId từ token hoặc middleware
 
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: "User ID là bắt buộc.",
+        });
+      }
+      const cart = await CART_SERVICE.getCartWithGroupedProductsByUser(userId);
       return res.status(200).json({
         success: true,
         message: "Cart retrieved successfully",
-        cart: cart,
+        data: cart,
       });
     } catch (error) {
-      console.error("Error in getCartByUserIdController:", error);
+      console.error("Error retrieving cart:", error.message);
       return res.status(500).json({
         success: false,
-        message: "Failed to retrieve cart",
+        message: "Error retrieving cart.",
         error: error.message,
       });
     }
