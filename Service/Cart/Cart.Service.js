@@ -57,7 +57,7 @@ const CART_SERVICE = {
 
     // Tìm sản phẩm trong giỏ hàng
     const productIndex = cart.LIST_PRODUCT.findIndex(
-      (item) => item.PRODUCT_ID.toString() === productId.toString()
+      (item) => item.PRODUCT_ID.toString() === productId
     );
     if (productIndex === -1) {
       throw new Error("Product not found in cart");
@@ -81,8 +81,9 @@ const CART_SERVICE = {
 
     // Tìm sản phẩm trong giỏ hàng
     const productIndex = cart.LIST_PRODUCT.findIndex(
-      (product) => product.PRODUCT_ID.toString() === productId.toString()
+      (product) => product.PRODUCT_ID.toString() === productId
     );
+    
     if (productIndex === -1) {
       throw new Error("Product not found in cart");
     }
@@ -107,9 +108,9 @@ const CART_SERVICE = {
       {
         $lookup: {
           from: "products", // Tên collection chứa thông tin sản phẩm
-          localField: "LIST_PRODUCT.PRODUCT_ID",
-          foreignField: "_id",
-          as: "productDetails",
+          localField: "LIST_PRODUCT.PRODUCT_ID", // Kết nối ID sản phẩm từ giỏ hàng
+          foreignField: "_id", // Kết nối với trường _id trong collection products
+          as: "productDetails", // Lưu kết quả vào biến productDetails
         },
       },
       {
@@ -117,9 +118,12 @@ const CART_SERVICE = {
       },
       {
         $addFields: {
+          "LIST_PRODUCT.IMAGES": "$productDetails.IMAGES",
+          "LIST_PRODUCT.NAME": "$productDetails.NAME", // Gán tên sản phẩm từ productDetails vào LIST_PRODUCT
+          "LIST_PRODUCT.PRICE": "$productDetails.PRICE", // Gán giá sản phẩm từ productDetails vào LIST_PRODUCT
           "LIST_PRODUCT.TOTAL_PRICE_FOR_PRODUCT": {
             $multiply: [
-              "$productDetails.PRICE", // Giá sản phẩm lấy từ chi tiết sản phẩm
+              "$productDetails.PRICE", // Giá sản phẩm từ productDetails
               "$LIST_PRODUCT.QUANTITY", // Nhân với số lượng sản phẩm
             ],
           },
@@ -128,8 +132,8 @@ const CART_SERVICE = {
       {
         $group: {
           _id: "$USER_ID",
-          PRODUCTS: { $push: "$LIST_PRODUCT" },
-          TOTAL_CART_PRICE: { $sum: "$LIST_PRODUCT.TOTAL_PRICE_FOR_PRODUCT" }, // Tổng giá giỏ hàng
+          PRODUCTS: { $push: "$LIST_PRODUCT" }, // Đẩy danh sách sản phẩm vào PRODUCTS
+          TOTAL_CART_PRICE: { $sum: "$LIST_PRODUCT.TOTAL_PRICE_FOR_PRODUCT" }, // Tổng giá trị giỏ hàng
         },
       },
       {

@@ -237,6 +237,51 @@ class USER_SERVICE {
 
     return foundUser;
   }
+
+  async addFavoriteProduct(userId, productId) {
+    const user = await USER_MODEL.findById(userId);
+    if (!user) {
+      return Promise.reject(new Error("Người dùng không tồn tại."));
+    }
+
+    // Kiểm tra xem sản phẩm đã có trong danh sách yêu thích chưa
+    if (user.FAVORITES.includes(productId)) {
+      return Promise.reject(
+        new Error("Sản phẩm đã có trong danh sách yêu thích.")
+      );
+    }
+
+    user.FAVORITES.push(productId);
+    await user.save();
+    return { success: true, message: "Sản phẩm đã được thêm vào yêu thích." };
+  }
+
+  async removeFavoriteProduct(userId, productId) {
+    const user = await USER_MODEL.findById(userId);
+    if (!user) {
+      return Promise.reject(new Error("Người dùng không tồn tại."));
+    }
+
+    const favoriteIndex = user.FAVORITES.indexOf(productId);
+    if (favoriteIndex === -1) {
+      return Promise.reject(
+        new Error("Sản phẩm không có trong danh sách yêu thích.")
+      );
+    }
+
+    user.FAVORITES.splice(favoriteIndex, 1);
+    await user.save();
+    return { success: true, message: "Sản phẩm đã được xóa khỏi yêu thích." };
+  }
+  
+  async getFavoriteProducts(userId) {
+    const user = await USER_MODEL.findById(userId).populate("FAVORITES");
+    if (!user) {
+      return Promise.reject(new Error("Người dùng không tồn tại."));
+    }
+
+    return user.FAVORITES;
+  }
 }
 
 module.exports = new USER_SERVICE();

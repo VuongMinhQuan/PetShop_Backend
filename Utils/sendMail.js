@@ -184,7 +184,11 @@ class MailQueue {
             padding: 0 !important;
             height: 100% !important;
             width: 100% !important;
-            background: #f1f1f1;
+             background-image: url('https://res.cloudinary.com/djdg03sig/image/upload/v1726816467/background2_n35uef.avif'); /* Sử dụng hình ảnh làm background */
+                background-size: cover; /* Điều chỉnh kích thước cho vừa khít */
+                background-position: center; /* Căn giữa hình nền */
+                background-repeat: no-repeat; /* Không lặp lại hình ảnh */
+                background-color: #3ba8cd;
         }
         
         /* What it does: Stops email clients resizing small text. */
@@ -222,6 +226,37 @@ class MailQueue {
         a {
             text-decoration: none;
         }
+        
+         /* Styling for the form container */
+            .email-container {
+                background-color: rgba(255, 255, 255, 0.5);
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+                padding: 20px;
+                margin: 40px auto;
+                max-width: 400px;
+            }
+
+            /* More styling for other elements */
+            .btn {
+                padding: 10px 15px;
+                display: inline-block;
+                border-radius: 5px;
+                background: #96D6FF;
+                color: #ffffff;
+                text-decoration: none;
+            }
+
+            h2 {
+                color: #333;
+                font-size: 24px;
+            }
+
+            p {
+                color: #044d91;
+                font-size: 16px;
+            }
         
         /* What it does: A work-around for email clients meddling in triggered links. */
         *[x-apple-data-detectors],  /* iOS */
@@ -459,7 +494,7 @@ class MailQueue {
         </head>
         
         <body width="100%" style="margin: 0; padding: 0 !important; mso-line-height-rule: exactly; background-color: #f1f1f1;">
-            <center style="width: 100%; background-color: #f1f1f1;">
+            <center style="width: 100%; background-image: url('https://res.cloudinary.com/djdg03sig/image/upload/v1726816467/background2_n35uef.avif'); background-size: cover; background-position: center;">
             <div style="display: none; font-size: 1px;max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all; font-family: sans-serif;">
             &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
             </div>
@@ -471,14 +506,14 @@ class MailQueue {
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                         <tr>
                             <td class="logo" style="text-align: center;">
-                                <h1><a href="#">e-Verify</a></h1>
+                                <h1><a href="#">Q-PetShop Verify</a></h1>
                             </td>
                         </tr>
                     </table>
                 </td>
                 </tr><!-- end tr -->
                 <tr>
-                <td valign="middle" class="hero bg_white" style="padding: 3em 0 2em 0;">
+                <td valign="middle" class="hero bg_white" style="padding: 4em 0 2em 0;">
                     <img src="https://assets-global.website-files.com/639c99568848490eb3265dae/64c2c8ec1a7ebea427df2374_Open%20Graph%20Image%20-%20Verified%20Email.png" alt="" style="width: 300px; max-width: 600px; height: auto; margin: auto; display: block;">
                 </td>
                 </tr><!-- end tr -->

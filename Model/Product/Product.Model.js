@@ -13,8 +13,8 @@ const typeSchema = new Schema(
       {
         type: String,
         enum: [
-          'Alaska', 'Husky', 'Golden', 'Bull Pháp', 'Corgi', 'Poodle', 'Pug', 'Samoyed', 'Cat', 'Bird', 'Hamster', // for Animals
-          'FDog', 'FCat', 'FBird', 'FHamster', // for Foods
+          'Alaska', 'Husky', 'Golden', 'Bull Pháp', 'Corgi', 'Poodle', 'Pug', 'Samoyed', 'Cat', // for Animals
+          'FDog', 'FCat', // for Foods
           'Toy', 'Bag', 'Cage' // for Products
         ],
         required: true,
@@ -46,7 +46,6 @@ const productSchema = new Schema(
     },
     QUANTITY: {
       type: Number,
-      required: true,
     },
     DISCOUNT: {
       type: Number,

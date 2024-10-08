@@ -3,7 +3,7 @@ const Joi = require("joi");
 class PRODUCT_VALIDATE {
   static createProduct() {
     return Joi.object({
-      NAME: Joi.string().trim().min(3).max(100).required().messages({
+      NAME: Joi.string().trim().min(3).max(100).messages({
         "string.base": "Tên sản phẩm phải là một chuỗi ký tự.",
         "string.empty": "Tên sản phẩm không được để trống.",
         "string.min": "Tên sản phẩm phải có ít nhất {#limit} ký tự.",
@@ -11,13 +11,13 @@ class PRODUCT_VALIDATE {
         "any.required": "Tên sản phẩm là bắt buộc.",
       }),
 
-      PRICE: Joi.number().positive().required().messages({
+      PRICE: Joi.number().positive().messages({
         "number.base": "Giá sản phẩm phải là một số.",
         "number.positive": "Giá sản phẩm phải là một số dương.",
         "any.required": "Giá sản phẩm là bắt buộc.",
       }),
 
-      QUANTITY: Joi.number().integer().min(0).required().messages({
+      QUANTITY: Joi.number().integer().min(0).messages({
         "number.base": "Số lượng sản phẩm phải là một số.",
         "number.integer": "Số lượng sản phẩm phải là một số nguyên.",
         "number.min": "Số lượng sản phẩm không được nhỏ hơn {#limit}.",
@@ -40,7 +40,6 @@ class PRODUCT_VALIDATE {
         subTypes: Joi.array()
           .items(
             Joi.string().valid(
-              // Các giá trị hợp lệ cho từng loại chính
               "Alaska",
               "Husky",
               "Golden",
@@ -49,33 +48,23 @@ class PRODUCT_VALIDATE {
               "Poodle",
               "Pug",
               "Samoyed",
-              "Cat",
-              "Bird",
-              "Hamster",
-              "Cat",
-              "Bird",
-              "Hamster", // for Animals
+              "Cat", // for Animals
               "FDog",
-              "FCat",
-              "FBird",
-              "FHamster", // for Foods
+              "FCat", // for Foods
               "Toy",
               "Bag",
               "Cage" // for Products
             )
           )
           .min(1)
-          .required()
           .messages({
             "any.only": "Loại phụ phải là một giá trị hợp lệ.",
             "any.required": "Loại phụ là bắt buộc.",
           }),
-      })
-        .required()
-        .messages({
-          "object.base": "TYPE phải là một đối tượng.",
-          "any.required": "Loại sản phẩm là bắt buộc.",
-        }),
+      }).messages({
+        "object.base": "TYPE phải là một đối tượng.",
+        "any.required": "Loại sản phẩm là bắt buộc.",
+      }),
 
       CREATED_AT: Joi.date().default(() => new Date()),
 
@@ -86,14 +75,11 @@ class PRODUCT_VALIDATE {
         "number.min": "Giảm giá không được nhỏ hơn {#limit}.",
         "number.max": "Giảm giá không được lớn hơn {#limit}.",
       }),
-      IMAGES: Joi.array()
-        .items(Joi.string().uri().required())
-        .optional()
-        .messages({
-          "array.base": `"IMAGES" phải là một mảng`,
-          "string.base": `"IMAGES" chứa các giá trị phải là chuỗi`,
-          "string.uri": `"IMAGES" chứa các giá trị phải là URL hợp lệ`,
-        }),
+      IMAGES: Joi.array().items(Joi.string().uri()).optional().messages({
+        "array.base": `"IMAGES" phải là một mảng`,
+        "string.base": `"IMAGES" chứa các giá trị phải là chuỗi`,
+        "string.uri": `"IMAGES" chứa các giá trị phải là URL hợp lệ`,
+      }),
     });
   }
 }

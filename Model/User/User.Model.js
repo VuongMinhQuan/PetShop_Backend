@@ -68,6 +68,12 @@ const userSchema = new Schema(
     IS_ACTIVATED: {
       type: Boolean,
     },
+    FAVORITES: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Product", // Liên kết với model Product
+      },
+    ],
   },
   {
     versionKey: false,

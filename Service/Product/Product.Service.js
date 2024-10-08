@@ -37,16 +37,16 @@ class PRODUCT_SERVICE {
           }
         })
       );
-    }    
+    }
     const newProductData = {
-      NAME : body.NAME,
+      NAME: body.NAME,
       PRICE: body.PRICE,
       DESCRIPTION: body.DESCRIPTION,
       TYPE: body.TYPE,
       IMAGES: uploadedImages,
       QUANTITY: body.QUANTITY,
-    }
-    const newProduct = new PRODUCT_MODEL(newProductData);   
+    };
+    const newProduct = new PRODUCT_MODEL(newProductData);
     return await newProduct.save();
   }
 
@@ -107,6 +107,73 @@ class PRODUCT_SERVICE {
       console.error("Error retrieving latest products:", error);
       throw new Error("Error retrieving latest products");
     }
+  }
+  async searchProductByName(keyword) {
+    if (!keyword) {
+      throw new Error("Keyword is required for searching products.");
+    }
+
+    // Tìm kiếm sản phẩm theo từ khoá tên
+    const products = await PRODUCT_MODEL.find({
+      NAME: { $regex: keyword, $options: "i" }, // Tìm kiếm không phân biệt chữ hoa chữ thường
+      IS_DELETED: { $in: [false, null] },
+    }).lean();
+
+    return products;
+  }
+  async filterProductsBySubType(subTypes) {
+    return PRODUCT_MODEL.find({
+      "TYPE.subTypes": { $in: subTypes }, // Sử dụng mảng subTypes trong tìm kiếm
+      IS_DELETED: { $in: [false, null] },
+    }).lean();
+  }
+  async getProductById(productId) {
+    try {
+      // Kiểm tra nếu productId không tồn tại
+      if (!productId) {
+        throw new Error("Product ID is required.");
+      }
+
+      // Tìm sản phẩm theo ID và loại bỏ các sản phẩm đã bị xóa
+      const product = await PRODUCT_MODEL.findOne({
+        _id: productId,
+        IS_DELETED: { $in: [false, null] },
+      }).lean();
+
+      // Nếu không tìm thấy sản phẩm, báo lỗi
+      if (!product) {
+        throw new Error("Product not found.");
+      }
+
+      // Trả về chi tiết sản phẩm
+      return product;
+    } catch (error) {
+      console.error("Error retrieving product by ID:", error);
+      throw new Error("Error retrieving product by ID.");
+    }
+  }
+  async getAccompanyingProducts(subType) {
+    let relatedSubTypes = [];
+
+    switch (subType) {
+      case "Alaska":
+      case "Husky":
+      case "Golden":
+      case "Bull Pháp":
+      case "Corgi":
+      case "Poodle":
+      case "Pug":
+      case "Samoyed":
+        relatedSubTypes = ["FDog", "Toy", "Bag", "Cage"];
+        break;
+      case "Cat":
+        relatedSubTypes = ["FCat", "Toy", "Bag", "Cage"];
+        break;
+      default:
+        return [];
+    }
+
+    return await this.filterProductsBySubType(relatedSubTypes);
   }
 }
 

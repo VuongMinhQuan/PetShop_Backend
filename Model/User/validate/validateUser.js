@@ -65,6 +65,18 @@ class USER_VALIDATES {
       "any.required": "Địa chỉ là bắt buộc.",
       "string.empty": "Địa chỉ không được để trống.",
     }),
+    FAVORITES: Joi.array().items(
+      Joi.string()
+        .custom((value, helpers) => {
+          if (!Types.ObjectId.isValid(value)) {
+            return helpers.message("ID sản phẩm không hợp lệ.");
+          }
+          return value;
+        })
+        .messages({
+          "any.invalid": "ID sản phẩm không hợp lệ.",
+        })
+    ),
   });
 
   static loginValidate = Joi.object({

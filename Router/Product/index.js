@@ -30,4 +30,8 @@ router.get(
 //   authorizeRoles("ADMIN"),
   PRODUCT_CONTROLLER.getAllProducts
 );
+router.get("/search", PRODUCT_CONTROLLER.searchProductByName);
+router.post("/filter", PRODUCT_CONTROLLER.getProductsBySubType)
+router.get("/getProduct/:productId", PRODUCT_CONTROLLER.getProductById);
+router.get("/getAccompanyProduct/:productId", PRODUCT_CONTROLLER.getAccompanyingProducts);
 module.exports = router;

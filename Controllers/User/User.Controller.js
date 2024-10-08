@@ -34,7 +34,7 @@ class USER_CONTROLLER {
             PHONE_NUMBER: "Số điện thoại đã tồn tại",
           },
         });
-      }  
+      }
 
       // Đăng ký người dùng
       const newUser = await USER_SERVICE.registerUser(payload);
@@ -143,9 +143,7 @@ class USER_CONTROLLER {
         return res.status(500).json({ error: "Invalid or expired OTP." });
       }
       await USER_SERVICE.resetPassword(email, newPassword, otp);
-      return res
-        .status(200)
-        .json({ message: "Thay đổi mật khẩu thành công!" });
+      return res.status(200).json({ message: "Thay đổi mật khẩu thành công!" });
     } catch (err) {
       res.status(500).json({ error: "Error resetting password" });
     }
@@ -319,6 +317,38 @@ class USER_CONTROLLER {
     }
   };
 
+  addFavoriteProduct = async (req, res) => {
+    const { productId } = req.body;
+    const userId = req.user_id;
+
+    try {
+      const result = await USER_SERVICE.addFavoriteProduct(userId, productId);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
+  removeFavoriteProduct = async (req, res) => {
+    const { productId } = req.body;
+    const userId = req.user_id;
+
+    USER_SERVICE.removeFavoriteProduct(userId, productId)
+      .then((result) => res.status(200).json(result))
+      .catch((error) =>
+        res.status(500).json({ success: false, message: error.message })
+      );
+  };
+
+  getFavoriteProducts = async (req, res) => {
+    const userId = req.user_id;
+
+    USER_SERVICE.getFavoriteProducts(userId)
+      .then((favorites) => res.status(200).json({ success: true, favorites }))
+      .catch((error) =>
+        res.status(500).json({ success: false, message: error.message })
+      );
+  };
 }
 
 module.exports = new USER_CONTROLLER();

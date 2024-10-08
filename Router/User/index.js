@@ -33,6 +33,9 @@ router.get("/info", verifyToken, USER_CONTROLLER.getUserById);
 router.get("/profile", verifyToken, (req, res) => {
   return res.json(req.user);
 });
+router.put("/addFavorite", verifyToken, USER_CONTROLLER.addFavoriteProduct);
+router.post("/removeFavorite", verifyToken, USER_CONTROLLER.removeFavoriteProduct);
+router.get("/favorites", verifyToken, USER_CONTROLLER.getFavoriteProducts);
 router.post("/logout", USER_CONTROLLER.logout);
 
 module.exports = router;
