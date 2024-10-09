@@ -37,6 +37,56 @@ class BOOKING_SERVICE {
     return booking;
   }
 
+  async bookProductNows(userId, productsDetails) {
+    let listProducts = [];
+    let totalPrice = 0;
+
+    // Kiểm tra nếu chỉ có một sản phẩm (object) hoặc nhiều sản phẩm (array)
+    const isSingleProduct = !Array.isArray(productsDetails);
+
+    if (isSingleProduct) {
+      // Trường hợp chỉ có một sản phẩm
+      productsDetails = [productsDetails]; // Chuyển object thành mảng để xử lý dễ hơn
+    }
+
+    for (const productDetails of productsDetails) {
+      const productId = productDetails.productId || productDetails.PRODUCT_ID;
+      const product = await PRODUCT_MODEL.findById(productId);
+
+      if (!product) {
+        throw new Error("Sản phẩm không tồn tại.");
+      }
+
+      // Tính tổng giá cho từng sản phẩm
+      const totalPriceProduct = productDetails.QUANTITY * product.PRICE;
+
+      // Thêm sản phẩm vào danh sách sản phẩm trong booking
+      listProducts.push({
+        PRODUCT_ID: productId,
+        QUANTITY: productDetails.QUANTITY,
+        TOTAL_PRICE_PRODUCT: totalPriceProduct,
+      });
+
+      // Cộng tổng giá sản phẩm vào tổng giá booking
+      totalPrice += totalPriceProduct;
+    }
+
+    // Tạo booking mới với danh sách sản phẩm
+    const booking = new BOOKING_MODEL({
+      USER_ID: userId,
+      LIST_PRODUCT: listProducts, // Danh sách các sản phẩm đã đặt
+      TOTAL_PRICE: totalPrice, // Tổng giá cho tất cả các sản phẩm
+      STATUS: "NotYetPaid", // Trạng thái booking ban đầu
+      CUSTOMER_PHONE: productsDetails[0].CUSTOMER_PHONE, // Thông tin khách hàng từ sản phẩm đầu tiên
+      CUSTOMER_NAME: productsDetails[0].CUSTOMER_NAME,
+    });
+
+    // Lưu booking vào database
+    await booking.save();
+
+    return booking;
+  }
+
   // Đặt sản phẩm từ giỏ hàng
   async bookFromCart(userId, bookingData) {
     // Tìm giỏ hàng của người dùng

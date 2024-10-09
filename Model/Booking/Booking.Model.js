@@ -1,3 +1,4 @@
+const { required } = require("joi");
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
@@ -37,6 +38,9 @@ const BookingSchema = new Schema({
   CUSTOMER_NAME: {
     type: String,
     required: true,
+  },
+  CUSTOMER_ADDRESS: {
+    type: String,
   },
 }, 
   {

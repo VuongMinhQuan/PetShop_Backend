@@ -8,6 +8,7 @@ const {
 const authorizeRoles = require("../../Middleware/authorizeRoles");
 
 router.post('/bookProductNow', verifyToken,BOOKING_CONTROLLER.bookProductNow);
+router.post('/bookProductNows', verifyToken, BOOKING_CONTROLLER.bookProductNows);
 router.post('/bookFormCart', verifyToken,BOOKING_CONTROLLER.bookFromCart);
 router.post('/getBookingByUserId', verifyToken,BOOKING_CONTROLLER.getBookingsByUserId);
 router.put('/updateStatus', verifyToken,BOOKING_CONTROLLER.updateBookingStatus);

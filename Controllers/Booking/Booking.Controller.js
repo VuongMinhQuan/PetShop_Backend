@@ -27,6 +27,39 @@ class BOOKING_CONTROLLER {
     }
   }
 
+  // Đặt nhiều sản phẩm cùng một lúc
+  async bookProductNows(req, res) {
+    const { userId, productsDetails } = req.body;
+
+    if (!userId || !productsDetails || productsDetails.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu userId hoặc danh sách sản phẩm.",
+      });
+    }
+
+    try {
+      // Gọi hàm bookProductNows từ service
+      const booking = await BOOKING_SERVICE.bookProductNows(
+        userId,
+        productsDetails
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Đặt sản phẩm thành công.",
+        data: booking,
+      });
+    } catch (error) {
+      console.error("Error in bookProductNows:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Có lỗi xảy ra khi đặt sản phẩm.",
+        error: error.message,
+      });
+    }
+  }
+
   // Đặt sản phẩm từ giỏ hàng
   async bookFromCart(req, res) {
     try {
