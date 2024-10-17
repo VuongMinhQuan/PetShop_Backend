@@ -26,17 +26,18 @@ class PRODUCT_SERVICE {
       uploadedImages = await Promise.all(
         body.IMAGES.map(async (image) => {
           // Kiểm tra nếu là URL hoặc file path cục bộ
-          if (image.startsWith("http")) {
+          if (typeof image === "string" && image.startsWith("http")) {
             // Upload từ URL
             const uploadResult = await CLOUDINARY.uploader.upload(image);
             return uploadResult.secure_url;
-          } else {
+          } else if (image.path) {
             // Upload từ file cục bộ
             const uploadResult = await CLOUDINARY.uploader.upload(image.path);
             return uploadResult.secure_url;
           }
         })
       );
+      body.IMAGES = uploadedImages;
     }
     const newProductData = {
       NAME: body.NAME,
@@ -63,24 +64,40 @@ class PRODUCT_SERVICE {
     return result.toObject();
   }
 
-  // Cập nhật thông tin sản phẩm, bao gồm URL của ảnh
-  async updateProduct(productId, updateData) {
-    try {
-      const result = await PRODUCT_MODEL.findByIdAndUpdate(
-        productId,
-        updateData,
-        {
-          new: true,
-        }
+  async updateProductById(productId, productData) {
+    let uploadedImages = [];
+
+    if (productData.IMAGES && productData.IMAGES.length > 0) {
+      uploadedImages = await Promise.all(
+        productData.IMAGES.map(async (image) => {
+          if (typeof image === "string" && image.startsWith("http")) {
+            // Nếu là URL thì giữ nguyên
+            return image; // Bạn có thể thêm code để upload ảnh từ URL nếu cần
+          } else if (image.path) {
+            // Nếu là file cục bộ, upload lên Cloudinary
+            const uploadResult = await CLOUDINARY.uploader.upload(image.path);
+            return uploadResult.secure_url;
+          }
+        })
       );
-      if (!result) {
-        throw new Error("Product not found");
-      }
-      return result;
-    } catch (error) {
-      console.error("Error updating product:", error);
-      throw new Error("Error updating product");
+
+      // Gán danh sách ảnh đã upload vào trường IMAGES trong productData
+      productData.IMAGES = uploadedImages.filter(Boolean); // Loại bỏ các giá trị không hợp lệ (undefined, null)
     }
+
+    const updatedProduct = await PRODUCT_MODEL.findByIdAndUpdate(
+      productId,
+      {
+        ...productData,
+      },
+      { new: true } // Trả về tài liệu đã cập nhật
+    );
+
+    if (!updatedProduct) {
+      throw new Error("Product not found");
+    }
+
+    return updatedProduct;
   }
 
   // Lấy toàn bộ sản phẩm
@@ -166,7 +183,14 @@ class PRODUCT_SERVICE {
       case "Samoyed":
         relatedSubTypes = ["FDog", "Toy", "Bag", "Cage"];
         break;
-      case "Cat":
+      case "ALD":
+      case "ALN":
+      case "Ba Tư":
+      case "Bengal":
+      case "Munchkin":
+      case "Scottish":
+      case "Xiêm":
+      case "Sphynx":
         relatedSubTypes = ["FCat", "Toy", "Bag", "Cage"];
         break;
       default:

@@ -1,7 +1,8 @@
 const BOOKING_MODEL = require("../../Model/Booking/Booking.Model");
 const CART_MODEL = require("../../Model/Cart/Cart.Model");
 const PRODUCT_MODEL = require("../../Model/Product/Product.Model");
-
+const USER_MODEL = require("../../Model/User/User.Model");
+const CART_SERVICE = require("../../Service/Cart/Cart.Service");
 class BOOKING_SERVICE {
   // Đặt sản phẩm ngay lập tức mà không cần giỏ hàng
   async bookProductNow(userId, productDetails) {
@@ -49,6 +50,21 @@ class BOOKING_SERVICE {
       productsDetails = [productsDetails]; // Chuyển object thành mảng để xử lý dễ hơn
     }
 
+    // Lấy thông tin người dùng nếu thiếu thông tin CUSTOMER_PHONE và CUSTOMER_NAME
+    let userProfile;
+    if (
+      !productsDetails[0].CUSTOMER_PHONE ||
+      !productsDetails[0].CUSTOMER_NAME ||
+      !productsDetails[0].CUSTOMER_ADDRESS
+    ) {
+      // Lấy thông tin người dùng từ cơ sở dữ liệu bằng userId
+      userProfile = await USER_MODEL.findById(userId);
+
+      if (!userProfile) {
+        throw new Error("Không tìm thấy thông tin người dùng.");
+      }
+    }
+
     for (const productDetails of productsDetails) {
       const productId = productDetails.productId || productDetails.PRODUCT_ID;
       const product = await PRODUCT_MODEL.findById(productId);
@@ -71,19 +87,24 @@ class BOOKING_SERVICE {
       totalPrice += totalPriceProduct;
     }
 
-    // Tạo booking mới với danh sách sản phẩm
+    // Tạo booking mới với danh sách sản phẩm và lấy thông tin người dùng nếu thiếu
     const booking = new BOOKING_MODEL({
       USER_ID: userId,
       LIST_PRODUCT: listProducts, // Danh sách các sản phẩm đã đặt
       TOTAL_PRICE: totalPrice, // Tổng giá cho tất cả các sản phẩm
       STATUS: "NotYetPaid", // Trạng thái booking ban đầu
-      CUSTOMER_PHONE: productsDetails[0].CUSTOMER_PHONE, // Thông tin khách hàng từ sản phẩm đầu tiên
-      CUSTOMER_NAME: productsDetails[0].CUSTOMER_NAME,
+      CUSTOMER_PHONE:
+        productsDetails[0].CUSTOMER_PHONE || userProfile.PHONE_NUMBER, // Nếu không có, lấy từ profile
+      CUSTOMER_NAME: productsDetails[0].CUSTOMER_NAME || userProfile.FULLNAME,
+      CUSTOMER_ADDRESS:
+        productsDetails[0].CUSTOMER_ADDRESS || userProfile.ADDRESS, // Nếu không có, lấy từ profile
     });
 
     // Lưu booking vào database
     await booking.save();
-
+    for (const product of listProducts) {
+      await CART_SERVICE.removeProductFromCart(userId, product.PRODUCT_ID);
+    }
     return booking;
   }
 
@@ -210,14 +231,23 @@ class BOOKING_SERVICE {
       // Tìm tất cả các booking của người dùng dựa trên USER_ID
       const bookings = await BOOKING_MODEL.find({ USER_ID: userId }).populate({
         path: "LIST_PRODUCT.PRODUCT_ID",
-        select: "name price", // Lấy thông tin cơ bản của sản phẩm
+        select: "NAME PRICE IMAGES", // Lấy các trường NAME, PRICE, IMAGES
       });
 
       if (!bookings || bookings.length === 0) {
         throw new Error("Không tìm thấy booking nào");
       }
 
-      return bookings;
+      // Lấy hình ảnh đầu tiên từ mảng IMAGES
+      const formattedBookings = bookings.map((booking) => {
+        booking.LIST_PRODUCT = booking.LIST_PRODUCT.map((product) => {
+          product.PRODUCT_ID.IMAGES = product.PRODUCT_ID.IMAGES?.[0] || ""; // Lấy hình ảnh đầu tiên
+          return product;
+        });
+        return booking;
+      });
+
+      return formattedBookings;
     } catch (error) {
       console.error("Error in getBookingsByUserId:", error.message);
       throw new Error("Lỗi khi lấy booking của người dùng");
@@ -225,4 +255,4 @@ class BOOKING_SERVICE {
   }
 }
 
-module.exports = new BOOKING_SERVICE
+module.exports = new BOOKING_SERVICE();

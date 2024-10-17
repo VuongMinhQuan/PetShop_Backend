@@ -1,4 +1,5 @@
 const BOOKING_SERVICE = require("../../Service/Booking/Booking.Service");
+const USER_MODEL = require("../../Model/User/User.Model");
 
 class BOOKING_CONTROLLER {
   // Đặt sản phẩm ngay lập tức
@@ -29,7 +30,8 @@ class BOOKING_CONTROLLER {
 
   // Đặt nhiều sản phẩm cùng một lúc
   async bookProductNows(req, res) {
-    const { userId, productsDetails } = req.body;
+    const { productsDetails } = req.body;
+    const userId = req.user_id; // Lấy user ID từ token hoặc session
 
     if (!userId || !productsDetails || productsDetails.length === 0) {
       return res.status(400).json({
@@ -39,6 +41,31 @@ class BOOKING_CONTROLLER {
     }
 
     try {
+      // Nếu không có thông tin khách hàng, lấy thông tin từ profile
+      let userProfile;
+      if (
+        !productsDetails[0].CUSTOMER_PHONE ||
+        !productsDetails[0].CUSTOMER_NAME ||
+        !productsDetails[0].CUSTOMER_ADDRESS
+      ) {
+        userProfile = await USER_MODEL.findById(userId);
+
+        if (!userProfile) {
+          return res.status(404).json({
+            success: false,
+            message: "Không tìm thấy thông tin người dùng.",
+          });
+        }
+
+        // Gán thông tin từ profile vào productsDetails nếu thiếu
+        productsDetails[0].CUSTOMER_PHONE =
+          productsDetails[0].CUSTOMER_PHONE || userProfile.PHONE_NUMBER;
+        productsDetails[0].CUSTOMER_NAME =
+          productsDetails[0].CUSTOMER_NAME || userProfile.FULLNAME;
+        productsDetails[0].CUSTOMER_ADDRESS =
+          productsDetails[0].CUSTOMER_ADDRESS || userProfile.ADDRESS;
+      }
+
       // Gọi hàm bookProductNows từ service
       const booking = await BOOKING_SERVICE.bookProductNows(
         userId,

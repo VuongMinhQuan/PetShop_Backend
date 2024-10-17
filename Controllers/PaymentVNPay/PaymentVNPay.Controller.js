@@ -1,5 +1,6 @@
 const moment = require("moment");
 const BOOKING_SERVICE = require("../../Service/Booking/Booking.Service");
+const CART_SERVICE = require("../../Service/Cart/Cart.Service")
 
 function sortObject(obj) {
   let sorted = {};
@@ -121,11 +122,9 @@ class PaymentController {
           });
 
           if (updateBooking) {
-            return res.status(200).json({
-              statusCode: 200,
-              msg: "Đơn hàng đã được thanh toán thành công",
-              data: updateBooking,
-            });
+            return res.redirect(
+              `${process.env.FRONTEND_URL}/user/history?success=true`
+            );
           } else {
             return res.status(404).json({
               statusCode: 404,

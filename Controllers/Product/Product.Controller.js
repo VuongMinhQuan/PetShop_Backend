@@ -1,5 +1,6 @@
 const PRODUCT_SERVICE = require("../../Service/Product/Product.Service");
 const PRODUCT_VALIDATE = require("../../Model/Product/validate/validateProduct");
+const CLOUDINARY = require("../../Config/cloudinaryConfig");
 
 class PRODUCT_CONTROLLER {
   // Tạo sản phẩm mới
@@ -8,6 +9,7 @@ class PRODUCT_CONTROLLER {
 
     // Validate dữ liệu đầu vào
     const { error } = PRODUCT_VALIDATE.createProduct().validate(payload);
+
     if (error) {
       return res.status(400).json({
         success: false,
@@ -18,10 +20,33 @@ class PRODUCT_CONTROLLER {
 
     const NAME = payload.NAME;
     try {
+      let uploadedImages = [];
+
+      // **Upload ảnh từ file (nếu có)**
       if (req.files && req.files.length > 0) {
-        const images = req.files.map((file) => ({ path: file.path })); // Lấy đường dẫn tạm thời từ Multer
-        roomData.IMAGES = images;
+        uploadedImages = await Promise.all(
+          req.files.map(async (file) => {
+            const uploadResult = await CLOUDINARY.uploader.upload(file.path); // Upload lên Cloudinary
+            return uploadResult.secure_url; // Trả về URL ảnh đã upload
+          })
+        );
       }
+
+      // **Upload ảnh từ URL (nếu có)**
+      if (payload.IMAGES && payload.IMAGES.length > 0) {
+        const urlUploads = await Promise.all(
+          payload.IMAGES.map(async (imageUrl) => {
+            if (imageUrl.startsWith("http")) {
+              const uploadResult = await CLOUDINARY.uploader.upload(imageUrl); // Upload từ URL
+              return uploadResult.secure_url;
+            }
+          })
+        );
+        uploadedImages = uploadedImages.concat(urlUploads); // Kết hợp cả ảnh từ file và URL
+      }
+
+      // Gán ảnh đã upload vào payload
+      payload.IMAGES = uploadedImages;
       const checkProductExists = await PRODUCT_SERVICE.checkProductExists(NAME);
       if (checkProductExists) {
         return res.status(400).json({ message: "Tên sản phẩm đã tồn tại." });
@@ -54,21 +79,53 @@ class PRODUCT_CONTROLLER {
 
   // Cập nhật thông tin sản phẩm, bao gồm URL của ảnh
   async updateProduct(req, res) {
-    try {
-      const { productId } = req.params;
-      const updateData = req.body;
+    const productId = req.params.productId; // Lấy ID sản phẩm từ params
+    const payload = req.body; // Lấy dữ liệu từ body
 
-      // Validate dữ liệu cập nhật nếu cần
-      const { error } = PRODUCT_VALIDATE.createProduct().validate(updateData);
-      if (error) {
-        return res.status(400).json({ message: error.details[0].message });
+    // Validate dữ liệu cập nhật nếu cần
+    const { error } = PRODUCT_VALIDATE.createProduct().validate(payload);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+
+    try {
+      let uploadedImages = [];
+
+      // **Upload ảnh từ file (nếu có)**
+      if (req.files && req.files.length > 0) {
+        uploadedImages = await Promise.all(
+          req.files.map(async (file) => {
+            const uploadResult = await CLOUDINARY.uploader.upload(file.path); // Upload lên Cloudinary
+            return uploadResult.secure_url; // Trả về URL ảnh đã upload
+          })
+        );
       }
 
-      const updatedProduct = await PRODUCT_SERVICE.updateProduct(
+      // **Upload ảnh từ URL (nếu có)**
+      if (payload.IMAGES && payload.IMAGES.length > 0) {
+        const urlUploads = await Promise.all(
+          payload.IMAGES.map(async (imageUrl) => {
+            if (imageUrl.startsWith("http")) {
+              const uploadResult = await CLOUDINARY.uploader.upload(imageUrl); // Upload từ URL
+              return uploadResult.secure_url;
+            }
+          })
+        );
+        uploadedImages = uploadedImages.concat(urlUploads); // Kết hợp cả ảnh từ file và URL
+      }
+
+      // Gán ảnh đã upload vào payload
+      payload.IMAGES = uploadedImages;
+
+      // Gọi service để cập nhật sản phẩm
+      const updatedProduct = await PRODUCT_SERVICE.updateProductById(
         productId,
-        updateData
+        payload
       );
-      res.status(200).json(updatedProduct);
+      res.status(200).json({
+        message: "Sản phẩm đã được cập nhật thành công.",
+        data: updatedProduct,
+      });
     } catch (error) {
       console.error("Error updating product:", error);
       res.status(500).json({ error: error.message });

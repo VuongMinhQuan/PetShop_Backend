@@ -8,19 +8,25 @@ const {
 } = require("../../Middleware/verifyToken");
 const authorizeRoles = require("../../Middleware/authorizeRoles");
 
-router.post("/createProduct",verifyToken, authorizeRoles('ADMIN'), upload.array('image', 10), PRODUCT_CONTROLLER.createProduct);
+router.post(
+  "/createProduct",
+  verifyToken,
+  authorizeRoles("ADMIN"),
+  upload,
+  PRODUCT_CONTROLLER.createProduct
+);
 router.put(
   "/updateProduct/:productId",
   verifyToken,
   authorizeRoles("ADMIN"),
-  upload.array("image", 10),
+  upload,
   PRODUCT_CONTROLLER.updateProduct
 );
 router.delete(
   "/deleteProduct/:productId",
   verifyToken,
   authorizeRoles("ADMIN"),
-  upload.array("image", 10),
+  upload,
   PRODUCT_CONTROLLER.deleteProduct
 );
 router.get("/getLatestProducts", PRODUCT_CONTROLLER.getLatestProducts);

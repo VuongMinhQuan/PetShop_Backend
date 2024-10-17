@@ -1,27 +1,44 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-
 const typeSchema = new Schema(
   {
     mainType: {
       type: String,
-      enum: ['Animals', 'Foods', 'Products'],
+      enum: ["Animals", "Foods", "Products"],
       required: true,
     },
     subTypes: [
       {
         type: String,
         enum: [
-          'Alaska', 'Husky', 'Golden', 'Bull Pháp', 'Corgi', 'Poodle', 'Pug', 'Samoyed', 'Cat', // for Animals
-          'FDog', 'FCat', // for Foods
-          'Toy', 'Bag', 'Cage' // for Products
+          "Alaska",
+          "Husky",
+          "Golden",
+          "Bull Pháp",
+          "Corgi",
+          "Poodle",
+          "Pug",
+          "Samoyed",
+          "ALD",
+          "ALN",
+          "Ba Tư",
+          "Bengal",
+          "Munchkin",
+          "Scottish",
+          "Xiêm",
+          "Sphynx", // for Animals
+          "FDog",
+          "FCat", // for Foods
+          "Toy",
+          "Bag",
+          "Cage", // for Products
         ],
         required: true,
       },
     ],
   },
-    { _id: false }
+  { _id: false }
 );
 
 const productSchema = new Schema(
@@ -39,7 +56,7 @@ const productSchema = new Schema(
     },
     TYPE: {
       type: typeSchema, // Sử dụng trực tiếp Type Schema
-      required: true,
+      required: false,
     },
     IMAGES: {
       type: [String],

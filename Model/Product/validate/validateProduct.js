@@ -48,7 +48,14 @@ class PRODUCT_VALIDATE {
               "Poodle",
               "Pug",
               "Samoyed",
-              "Cat", // for Animals
+              "ALD",
+              "ALN",
+              "Ba Tư",
+              "Bengal",
+              "Munchkin",
+              "Scottish",
+              "Xiêm",
+              "Sphynx", // for Animals
               "FDog",
               "FCat", // for Foods
               "Toy",
