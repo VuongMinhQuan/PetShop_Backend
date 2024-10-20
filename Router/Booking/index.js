@@ -11,6 +11,16 @@ router.post('/bookProductNow', verifyToken,BOOKING_CONTROLLER.bookProductNow);
 router.post('/bookProductNows', verifyToken, BOOKING_CONTROLLER.bookProductNows);
 router.post('/bookFormCart', verifyToken,BOOKING_CONTROLLER.bookFromCart);
 router.post('/getBookingByUserId', verifyToken,BOOKING_CONTROLLER.getBookingsByUserId);
+router.put(
+  "/updateProductAvailability",
+  verifyToken,
+  BOOKING_CONTROLLER.updateProductAvailability
+);
+
 router.put('/updateStatus', verifyToken,BOOKING_CONTROLLER.updateBookingStatus);
+router.get("/getAllBookings", BOOKING_CONTROLLER.getAllBookings);
+router.get("/getBookingDetails/:id", BOOKING_CONTROLLER.getBookingDetails);
+
+
 
 module.exports = router;

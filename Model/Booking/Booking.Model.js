@@ -7,6 +7,7 @@ const BookingSchema = new Schema(
     USER_ID: {
       type: Schema.Types.ObjectId,
       required: true,
+      ref: "User",
     },
     LIST_PRODUCT: [
       {
@@ -31,7 +32,7 @@ const BookingSchema = new Schema(
     },
     STATUS: {
       type: String,
-      enum: ["NotYetPaid", "Paid", "Canceled"],
+      enum: ["NotYetPaid", "Confirm", "Paid", "Canceled"],
     },
     CUSTOMER_PHONE: {
       type: String,
@@ -43,6 +44,11 @@ const BookingSchema = new Schema(
     },
     CUSTOMER_ADDRESS: {
       type: String,
+      required: true,
+    },
+    PAYMENT_METHOD: {
+      type: String,
+      enum: ["COD", "VNPay"],
       required: true,
     },
   },

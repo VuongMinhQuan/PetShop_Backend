@@ -38,7 +38,7 @@ class BOOKING_SERVICE {
     return booking;
   }
 
-  async bookProductNows(userId, productsDetails) {
+  async bookProductNows(userId, productsDetails, paymentMethod) {
     let listProducts = [];
     let totalPrice = 0;
 
@@ -98,6 +98,7 @@ class BOOKING_SERVICE {
       CUSTOMER_NAME: productsDetails[0].CUSTOMER_NAME || userProfile.FULLNAME,
       CUSTOMER_ADDRESS:
         productsDetails[0].CUSTOMER_ADDRESS || userProfile.ADDRESS, // Nếu không có, lấy từ profile
+      PAYMENT_METHOD: paymentMethod,
     });
 
     // Lưu booking vào database
@@ -179,11 +180,11 @@ class BOOKING_SERVICE {
       };
     }
 
-    // Cập nhật trạng thái của đơn đặt phòng
+    // Cập nhật trạng thái của đơn đặt hàng
     booking.STATUS = status;
     await booking.save();
 
-    // Cập nhật trạng thái sản phẩm trong LIST_PRODUCT của đơn đặt phòng
+    // Cập nhật trạng thái sản phẩm trong LIST_PRODUCT của đơn đặt hàng
     for (let product of booking.LIST_PRODUCT) {
       await this.updateProductAvailability(
         product.PRODUCT_ID,
@@ -225,6 +226,43 @@ class BOOKING_SERVICE {
     };
   }
 
+  async getAllBookings() {
+    // Tìm tất cả các booking
+    const bookings = await BOOKING_MODEL.find({})
+      .populate({
+        path: "USER_ID",
+        select: "FULLNAME PHONE_NUMBER", // Chỉ lấy các trường FULLNAME và PHONE_NUMBER từ user
+      })
+      .populate({
+        path: "LIST_PRODUCT.PRODUCT_ID",
+        select: "NAME", // Chỉ lấy trường NAME từ sản phẩm
+      });
+
+    if (!bookings || bookings.length === 0) {
+      throw new Error("Không tìm thấy booking nào");
+    }
+
+    // Định dạng lại dữ liệu booking để gửi trả về
+    return bookings.map((booking) => {
+      return {
+        bookingId: booking._id, // Thêm bookingId vào kết quả trả về
+        USER_INFO: {
+          FULLNAME: booking.USER_ID.FULLNAME,
+          PHONE_NUMBER: booking.USER_ID.PHONE_NUMBER,
+        },
+        PRODUCT_LIST: booking.LIST_PRODUCT.map((product) => ({
+          NAME: product.PRODUCT_ID.NAME,
+          QUANTITY: product.QUANTITY,
+          TOTAL_PRICE_PRODUCT: product.TOTAL_PRICE_PRODUCT,
+        })),
+        TOTAL_PRICE: booking.TOTAL_PRICE,
+        STATUS: booking.STATUS,
+        PAYMENT_METHOD: booking.PAYMENT_METHOD,
+        createdAt: booking.createdAt,
+      };
+    });
+  }
+
   // Lấy tất cả các booking của một người dùng
   async getBookingsByUserId(userId) {
     try {
@@ -252,6 +290,41 @@ class BOOKING_SERVICE {
       console.error("Error in getBookingsByUserId:", error.message);
       throw new Error("Lỗi khi lấy booking của người dùng");
     }
+  }
+
+  // Trong BOOKING_SERVICE
+  async getBookingDetails(bookingId) {
+    // Tìm booking bằng ID
+    const booking = await BOOKING_MODEL.findById(bookingId)
+      .populate({
+        path: "USER_ID",
+        select: "FULLNAME PHONE_NUMBER", // Lấy tên và số điện thoại của khách hàng
+      })
+      .populate({
+        path: "LIST_PRODUCT.PRODUCT_ID",
+        select: "NAME PRICE IMAGES", // Lấy tên, giá và hình ảnh của sản phẩm
+      });
+
+    if (!booking) {
+      throw new Error("Không tìm thấy đơn đặt phòng");
+    }
+
+    return {
+      bookingId: booking._id,
+      CUSTOMER_NAME: booking.CUSTOMER_NAME,
+      CUSTOMER_PHONE: booking.CUSTOMER_PHONE,
+      CUSTOMER_ADDRESS: booking.CUSTOMER_ADDRESS,
+      LIST_PRODUCT: booking.LIST_PRODUCT.map((product) => ({
+        NAME: product.PRODUCT_ID.NAME,
+        PRICE: product.PRODUCT_ID.PRICE,
+        IMAGES: product.PRODUCT_ID.IMAGES,
+        QUANTITY: product.QUANTITY,
+        TOTAL_PRICE_PRODUCT: product.TOTAL_PRICE_PRODUCT,
+      })),
+      TOTAL_PRICE: booking.TOTAL_PRICE,
+      STATUS: booking.STATUS,
+      createdAt: booking.createdAt,
+    };
   }
 }
 

@@ -30,13 +30,21 @@ class BOOKING_CONTROLLER {
 
   // Đặt nhiều sản phẩm cùng một lúc
   async bookProductNows(req, res) {
-    const { productsDetails } = req.body;
+    const { productsDetails, paymentMethod } = req.body;
     const userId = req.user_id; // Lấy user ID từ token hoặc session
 
     if (!userId || !productsDetails || productsDetails.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Thiếu userId hoặc danh sách sản phẩm.",
+      });
+    }
+
+    // Kiểm tra paymentMethod
+    if (!paymentMethod || !["COD", "VNPay"].includes(paymentMethod)) {
+      return res.status(400).json({
+        success: false,
+        message: "Phương thức thanh toán không hợp lệ.",
       });
     }
 
@@ -69,7 +77,8 @@ class BOOKING_CONTROLLER {
       // Gọi hàm bookProductNows từ service
       const booking = await BOOKING_SERVICE.bookProductNows(
         userId,
-        productsDetails
+        productsDetails,
+        paymentMethod
       );
 
       return res.status(200).json({
@@ -110,6 +119,35 @@ class BOOKING_CONTROLLER {
     }
   }
 
+  async updateProductAvailability(req, res) {
+    const { productId, quantity } = req.body; // Lấy productId và quantity từ body
+
+    if (!productId || !quantity) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu productId hoặc quantity trong yêu cầu.",
+      });
+    }
+
+    try {
+      const response = await BOOKING_SERVICE.updateProductAvailability(
+        productId,
+        quantity
+      );
+      return res.status(response.statusCode).json({
+        success: true,
+        message: response.msg,
+      });
+    } catch (error) {
+      console.error("Error in updateProductAvailability:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi khi cập nhật trạng thái sản phẩm.",
+        error: error.message,
+      });
+    }
+  }
+
   // Cập nhật trạng thái booking
   async updateBookingStatus(req, res) {
     const { bookingId, status } = req.body;
@@ -142,6 +180,24 @@ class BOOKING_CONTROLLER {
     }
   }
 
+  async getAllBookings(req, res) {
+    try {
+      const bookings = await BOOKING_SERVICE.getAllBookings();
+      return res.status(200).json({
+        success: true,
+        message: "Lấy danh sách tất cả các booking thành công",
+        data: bookings,
+      });
+    } catch (error) {
+      console.error("Error in getAllBookings:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi khi lấy danh sách tất cả các booking",
+        error: error.message,
+      });
+    }
+  }
+
   // Lấy tất cả các booking của một người dùng
   async getBookingsByUserId(req, res) {
     try {
@@ -160,6 +216,23 @@ class BOOKING_CONTROLLER {
         success: false,
         message: "Lỗi khi lấy danh sách booking.",
         error: error.message,
+      });
+    }
+  }
+
+  async getBookingDetails(req, res) {
+    try {
+      const bookingId = req.params.id; // Lấy bookingId từ tham số URL
+      const bookingDetails = await BOOKING_SERVICE.getBookingDetails(bookingId);
+
+      res.status(200).json({
+        success: true,
+        data: bookingDetails,
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
       });
     }
   }
