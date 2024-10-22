@@ -1,8 +1,11 @@
+const { default: axios } = require("axios");
 const BOOKING_MODEL = require("../../Model/Booking/Booking.Model");
 const CART_MODEL = require("../../Model/Cart/Cart.Model");
 const PRODUCT_MODEL = require("../../Model/Product/Product.Model");
 const USER_MODEL = require("../../Model/User/User.Model");
 const CART_SERVICE = require("../../Service/Cart/Cart.Service");
+const MAIL_QUEUE = require("../../Utils/sendMail");
+
 class BOOKING_SERVICE {
   // Đặt sản phẩm ngay lập tức mà không cần giỏ hàng
   async bookProductNow(userId, productDetails) {
@@ -79,6 +82,7 @@ class BOOKING_SERVICE {
       // Thêm sản phẩm vào danh sách sản phẩm trong booking
       listProducts.push({
         PRODUCT_ID: productId,
+        NAME: product.NAME,
         QUANTITY: productDetails.QUANTITY,
         TOTAL_PRICE_PRODUCT: totalPriceProduct,
       });
@@ -98,6 +102,13 @@ class BOOKING_SERVICE {
       CUSTOMER_NAME: productsDetails[0].CUSTOMER_NAME || userProfile.FULLNAME,
       CUSTOMER_ADDRESS:
         productsDetails[0].CUSTOMER_ADDRESS || userProfile.ADDRESS, // Nếu không có, lấy từ profile
+      ProvinceID: productsDetails[0].ProvinceID,
+      ProvinceName: productsDetails[0].ProvinceName, // Lấy từ frontend
+      DistrictID: productsDetails[0].DistrictID, // Lấy từ frontend
+      DistrictName: productsDetails[0].DistrictName, // Lấy từ frontend
+      WardCode: productsDetails[0].WardCode, // Lấy từ frontend
+      WardName: productsDetails[0].WardName,
+
       PAYMENT_METHOD: paymentMethod,
     });
 
@@ -180,6 +191,10 @@ class BOOKING_SERVICE {
       };
     }
 
+    const user = await USER_MODEL.findById(booking.USER_ID);
+    if (!user || !user.EMAIL)
+      throw new Error("Không tìm thấy người dùng hoặc email không tồn tại");
+
     // Cập nhật trạng thái của đơn đặt hàng
     booking.STATUS = status;
     await booking.save();
@@ -192,11 +207,146 @@ class BOOKING_SERVICE {
       );
     }
 
+    if (status === "Paid" || status === "Confirm") {
+      const emailContent = `
+      <div style="
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f4f4f4;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      ">
+        <h2 style="
+          text-align: center;
+          background-color: #3ba8cd;
+          color: white;
+          padding: 10px 0;
+          margin: 0;
+          border-radius: 4px;
+        ">
+          Xin chào ${user.FULLNAME},
+        </h2>
+        <p style="
+          font-size: 16px;
+          color: #333;
+          margin-top: 20px;
+          font-weight: bold;
+        ">
+          Cảm ơn bạn đã đặt hàng với mã đơn hàng ${bookingId}. Chi tiết đơn hàng như sau:
+        </p>
+        <ul style="
+          padding: 0;
+          list-style: none;
+          margin: 10px 0 20px 0;
+        ">
+          <li style="
+            background-color: #e8f4f8;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-size: 15px;
+          ">
+            <strong>Tên khách hàng:</strong> ${booking.CUSTOMER_NAME}
+          </li>
+          <li style="
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-size: 15px;
+          ">
+            <strong>Số lượng sản phẩm:</strong> ${booking.LIST_PRODUCT.length}
+          </li>
+          <li style="
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-size: 15px;
+          ">
+            <strong>Tổng tiền:</strong> ${booking.TOTAL_PRICE} VND
+          </li>
+        </ul>
+        <p style="
+          font-size: 16px;
+          color: #333;
+          font-weight: bold;
+          text-align: center;
+          color: white;
+          padding: 10px;
+          border-radius: 4px;
+        ">
+          Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!
+        </p>
+      </div>
+    `;
+      // Đưa email vào hàng đợi
+      await MAIL_QUEUE.enqueue({
+        email: user.EMAIL,
+        otp: "", // Không cần OTP cho xác nhận booking
+        otpType: "BookingConfirmation",
+        content: emailContent,
+      });
+    }
+
     return {
       statusCode: 200,
       msg: `Trạng thái booking đã được cập nhật thành ${status}`,
       data: booking,
     };
+  }
+
+  async Shipping({ bookingId, weight, length, width, height, required_note }) {
+    let config = require("config");
+    const token = config.GHN.Token; // Lấy Token từ cấu hình
+    const shopId = config.GHN.ShopId; // Lấy ShopId từ cấu hình
+    const url = config.GHN.Url; // Lấy Url từ cấu hình
+    const booking = await BOOKING_MODEL.findById(bookingId);
+
+    if (!booking) {
+      return {
+        statusCode: 404,
+        msg: "Không tìm thấy đơn đặt hàng",
+      };
+    }
+
+    const items = booking.LIST_PRODUCT.map((item) => ({
+      name: item.NAME,
+      quantity: item.QUANTITY,
+      price: item.TOTAL_PRICE_PRODUCT,
+    }));
+
+    const ship = {
+      to_name: booking.CUSTOMER_NAME,
+      to_phone: booking.CUSTOMER_PHONE,
+      to_address: booking.CUSTOMER_ADDRESS,
+      to_ward_code: booking.WardCode.toString(),
+      to_district_id: booking.DistrictID,
+      cod_amount: booking.STATUS == "NotYetPaid" ? booking.TOTAL_PRICE : 0,
+      weight,
+      length,
+      width,
+      height,
+      service_type_id: 2,
+      payment_type_id: 1,
+      required_note,
+      Items: items,
+    };
+
+    console.log(ship);
+
+    try {
+      const response = await axios.post(url + "/create", ship, {
+        headers: {
+          Token: token,
+          ShopId: shopId,
+        },
+      });
+
+      console.log("Response from GHN:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error shipping:", error);
+      throw error;
+    }
   }
 
   async updateProductAvailability(productId, quantity) {
@@ -255,6 +405,8 @@ class BOOKING_SERVICE {
           QUANTITY: product.QUANTITY,
           TOTAL_PRICE_PRODUCT: product.TOTAL_PRICE_PRODUCT,
         })),
+        CUSTOMER_NAME: booking.CUSTOMER_NAME,
+        CUSTOMER_PHONE: booking.CUSTOMER_PHONE,
         TOTAL_PRICE: booking.TOTAL_PRICE,
         STATUS: booking.STATUS,
         PAYMENT_METHOD: booking.PAYMENT_METHOD,
@@ -314,6 +466,9 @@ class BOOKING_SERVICE {
       CUSTOMER_NAME: booking.CUSTOMER_NAME,
       CUSTOMER_PHONE: booking.CUSTOMER_PHONE,
       CUSTOMER_ADDRESS: booking.CUSTOMER_ADDRESS,
+      ProvinceName: booking.ProvinceName,
+      DistrictName: booking.DistrictName,
+      WardName: booking.WardName,
       LIST_PRODUCT: booking.LIST_PRODUCT.map((product) => ({
         NAME: product.PRODUCT_ID.NAME,
         PRICE: product.PRODUCT_ID.PRICE,

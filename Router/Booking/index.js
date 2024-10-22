@@ -20,7 +20,7 @@ router.put(
 router.put('/updateStatus', verifyToken,BOOKING_CONTROLLER.updateBookingStatus);
 router.get("/getAllBookings", BOOKING_CONTROLLER.getAllBookings);
 router.get("/getBookingDetails/:id", BOOKING_CONTROLLER.getBookingDetails);
-
+router.post("/shipping", BOOKING_CONTROLLER.Shipping);
 
 
 module.exports = router;

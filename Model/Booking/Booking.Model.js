@@ -16,6 +16,10 @@ const BookingSchema = new Schema(
           required: true,
           ref: "Product",
         },
+        NAME: {
+          type: String,
+          required: true,
+        },
         QUANTITY: {
           type: Number,
           required: true,
@@ -32,7 +36,7 @@ const BookingSchema = new Schema(
     },
     STATUS: {
       type: String,
-      enum: ["NotYetPaid", "Confirm", "Paid", "Canceled"],
+      enum: ["NotYetPaid", "Confirm",  "Paid", "Shipping", "Complete", "Canceled"],
     },
     CUSTOMER_PHONE: {
       type: String,
@@ -43,6 +47,30 @@ const BookingSchema = new Schema(
       required: true,
     },
     CUSTOMER_ADDRESS: {
+      type: String,
+      required: true,
+    },
+    ProvinceID: {
+      type: Number,
+      required: true,
+    },
+    ProvinceName: {
+      type: String,
+      required: true,
+    },
+    DistrictID: {
+      type: Number,
+      required: true,
+    },
+    DistrictName: {
+      type: String,
+      required: true,
+    },
+    WardCode: {
+      type: Number,
+      required: true,
+    },
+    WardName: {
       type: String,
       required: true,
     },

@@ -161,13 +161,11 @@ class USER_SERVICE {
     switch (tabStatus) {
       case "1":
         // Người dùng chưa kích hoạt hoặc không bị chặn
-        query = {
-          $or: [{ IS_ACTIVATED: false }, { "IS_BLOCKED.CHECK": { $ne: true } }],
-        };
+        query = { IS_ACTIVATED: false,  "IS_BLOCKED.CHECK": { $ne: true }};
         break;
       case "2":
         // Người dùng đã kích hoạt và không bị chặn
-        query = { IS_ACTIVATED: true, "IS_BLOCKED.CHECK": { $ne: true } };
+        query = { IS_ACTIVATED: true, "IS_BLOCKED.CHECK": { $ne: true }};
         break;
       case "3":
         // Người dùng bị chặn

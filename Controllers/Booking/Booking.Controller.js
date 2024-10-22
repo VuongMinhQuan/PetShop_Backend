@@ -198,6 +198,45 @@ class BOOKING_CONTROLLER {
     }
   }
 
+  async Shipping(req, res) {
+    // Lấy dữ liệu từ body của yêu cầu
+    const { bookingId, weight, length, width, height, required_note } =
+      req.body;
+
+    // Kiểm tra các tham số đầu vào
+    if (!bookingId || !weight || !length || !width || !height) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu thông tin yêu cầu.",
+      });
+    }
+
+    try {
+      // Gọi dịch vụ Shipping
+      const shippingResponse = await BOOKING_SERVICE.Shipping({
+        bookingId,
+        weight,
+        length,
+        width,
+        height,
+        required_note,
+      });
+
+      // Trả về kết quả từ dịch vụ
+      return res.status(200).json({
+        success: true,
+        data: shippingResponse,
+      });
+    } catch (error) {
+      console.error("Lỗi khi gọi dịch vụ Shipping:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Có lỗi xảy ra khi thực hiện giao hàng.",
+        error: error.message,
+      });
+    }
+  }
+
   // Lấy tất cả các booking của một người dùng
   async getBookingsByUserId(req, res) {
     try {
