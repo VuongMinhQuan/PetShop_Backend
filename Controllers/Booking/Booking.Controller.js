@@ -275,6 +275,28 @@ class BOOKING_CONTROLLER {
       });
     }
   }
+  async getDailyRevenue(req, res) {
+    try {
+      const { date } = req.body;
+
+      if (!date) {
+        return res
+          .status(400)
+          .json({ message: "Vui lòng cung cấp ngày cần tính doanh thu." });
+      }
+
+      const revenueData = await BOOKING_SERVICE.getDailyRevenue(date);
+      return res.status(200).json({
+        message: `Doanh thu trong ngày ${date}`,
+        data: revenueData,
+      });
+    } catch (error) {
+      console.error("Error in getDailyRevenue:", error);
+      return res
+        .status(500)
+        .json({ message: "Lỗi khi lấy doanh thu hàng ngày" });
+    }
+  }
 }
 
 module.exports = new BOOKING_CONTROLLER();

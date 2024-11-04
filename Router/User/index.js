@@ -16,12 +16,8 @@ router.post("/forgotPassword", USER_CONTROLLER.forgotPassword);
 router.post("/resendOTP", USER_CONTROLLER.ResendOTP);
 router.post("/resetPassword", USER_CONTROLLER.resetPassword);
 router.post("/loginUser", USER_CONTROLLER.login);
-router.get(
-  "/getUsers",
-  verifyToken,
-  authorizeRoles("ADMIN"),
-  USER_CONTROLLER.getUsers
-);
+router.get("/getUsers", verifyToken, USER_CONTROLLER.getUsers);
+
 router.post(
   "/blockUser",
   verifyToken,

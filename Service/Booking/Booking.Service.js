@@ -187,7 +187,7 @@ class BOOKING_SERVICE {
     if (!booking) {
       return {
         statusCode: 404,
-        msg: "Không tìm thấy đơn đặt phòng",
+        msg: "Không tìm thấy đơn đặt hàng",
       };
     }
 
@@ -195,16 +195,23 @@ class BOOKING_SERVICE {
     if (!user || !user.EMAIL)
       throw new Error("Không tìm thấy người dùng hoặc email không tồn tại");
 
+    const previousStatus = booking.STATUS;
+
     // Cập nhật trạng thái của đơn đặt hàng
     booking.STATUS = status;
     await booking.save();
 
     // Cập nhật trạng thái sản phẩm trong LIST_PRODUCT của đơn đặt hàng
-    for (let product of booking.LIST_PRODUCT) {
-      await this.updateProductAvailability(
-        product.PRODUCT_ID,
-        product.QUANTITY
-      );
+    if (
+      (previousStatus === "NotYetPaid" || previousStatus === "Canceled") &&
+      (status === "Paid" || status === "Confirm")
+    ) {
+      for (let product of booking.LIST_PRODUCT) {
+        await this.updateProductAvailability(
+          product.PRODUCT_ID,
+          product.QUANTITY
+        );
+      }
     }
 
     if (status === "Paid" || status === "Confirm") {
@@ -480,6 +487,45 @@ class BOOKING_SERVICE {
       STATUS: booking.STATUS,
       createdAt: booking.createdAt,
     };
+  }
+
+  // Thêm hàm getDailyRevenue vào BOOKING_SERVICE
+  async getDailyRevenue(date) {
+    try {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0); // Bắt đầu của ngày
+
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999); // Kết thúc của ngày
+
+      const revenueData = await BOOKING_MODEL.aggregate([
+        {
+          $match: {
+            STATUS: "Complete",
+            createdAt: { $gte: startOfDay, $lte: endOfDay },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: "$TOTAL_PRICE" },
+            orderCount: { $sum: 1 },
+          },
+        },
+      ]);
+
+      if (revenueData.length === 0) {
+        return { totalRevenue: 0, orderCount: 0 };
+      }
+
+      return {
+        totalRevenue: revenueData[0].totalRevenue,
+        orderCount: revenueData[0].orderCount,
+      };
+    } catch (error) {
+      console.error("Error fetching daily revenue:", error);
+      throw error;
+    }
   }
 }
 
