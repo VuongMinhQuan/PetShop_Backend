@@ -33,5 +33,7 @@ router.put("/addFavorite", verifyToken, USER_CONTROLLER.addFavoriteProduct);
 router.post("/removeFavorite", verifyToken, USER_CONTROLLER.removeFavoriteProduct);
 router.get("/favorites", verifyToken, USER_CONTROLLER.getFavoriteProducts);
 router.post("/logout", USER_CONTROLLER.logout);
+router.get("/activeUserCount", USER_CONTROLLER.getActiveUserCount);
+
 
 module.exports = router;

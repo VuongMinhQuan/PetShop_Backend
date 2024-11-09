@@ -5,6 +5,8 @@ const PRODUCT_MODEL = require("../../Model/Product/Product.Model");
 const USER_MODEL = require("../../Model/User/User.Model");
 const CART_SERVICE = require("../../Service/Cart/Cart.Service");
 const MAIL_QUEUE = require("../../Utils/sendMail");
+const mongoose = require("mongoose");
+
 
 class BOOKING_SERVICE {
   // Đặt sản phẩm ngay lập tức mà không cần giỏ hàng
@@ -465,7 +467,7 @@ class BOOKING_SERVICE {
       });
 
     if (!booking) {
-      throw new Error("Không tìm thấy đơn đặt phòng");
+      throw new Error("Không tìm thấy đơn đặt hàng");
     }
 
     return {
@@ -489,43 +491,288 @@ class BOOKING_SERVICE {
     };
   }
 
-  // Thêm hàm getDailyRevenue vào BOOKING_SERVICE
-  async getDailyRevenue(date) {
-    try {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0); // Bắt đầu của ngày
+  async getMonthlyRevenue(year, month) {
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 0);
 
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999); // Kết thúc của ngày
+    const completedBookings = await BOOKING_MODEL.aggregate([
+      {
+        $match: {
+          STATUS: "Complete",
+          createdAt: {
+            $gte: startOfMonth,
+            $lt: endOfMonth,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$TOTAL_PRICE" },
+        },
+      },
+    ]);
 
-      const revenueData = await BOOKING_MODEL.aggregate([
+    return completedBookings[0]?.totalRevenue || 0;
+  }
+
+  async getUserTotalSpent(userId) {
+    const result = await BOOKING_MODEL.aggregate([
+      {
+        $match: {
+          USER_ID: new mongoose.Types.ObjectId(userId), // Sử dụng 'new' với ObjectId
+          STATUS: { $in: ["Paid", "Complete"] }, // Chỉ lấy các đơn hàng Paid và Complete
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalSpent: { $sum: "$TOTAL_PRICE" }, // Tính tổng TOTAL_PRICE
+        },
+      },
+    ]);
+
+    return result[0]?.totalSpent || 0;
+  }
+
+  async getTotalRevenueByYearOrDateRange(year, startDate, endDate) {
+    if (year) {
+      // Tính doanh thu cho từng tháng trong năm đó
+      const revenueByMonth = await BOOKING_MODEL.aggregate([
         {
           $match: {
-            STATUS: "Complete",
-            createdAt: { $gte: startOfDay, $lte: endOfDay },
+            STATUS: { $in: ["Complete", "Paid"] },
+            createdAt: {
+              $gte: new Date(year, 0, 1),
+              $lt: new Date(year, 11, 31, 23, 59, 59),
+            },
           },
         },
         {
           $group: {
-            _id: null,
+            _id: { month: { $month: "$createdAt" } },
             totalRevenue: { $sum: "$TOTAL_PRICE" },
-            orderCount: { $sum: 1 },
           },
+        },
+        {
+          $match: { totalRevenue: { $gt: 0 } }, // Chỉ lấy những tháng có doanh thu > 0
+        },
+        {
+          $sort: { "_id.month": 1 }, // Sắp xếp theo tháng tăng dần
         },
       ]);
 
-      if (revenueData.length === 0) {
-        return { totalRevenue: 0, orderCount: 0 };
-      }
+      return { monthlyRevenue: revenueByMonth };
+    } else if (startDate && endDate) {
+      const revenueByDay = await BOOKING_MODEL.aggregate([
+        {
+          $match: {
+            STATUS: { $in: ["Complete", "Paid"] },
+            createdAt: {
+              $gte: new Date(startDate),
+              $lte: new Date(
+                new Date(endDate).setDate(new Date(endDate).getDate() + 1)
+              ),
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+              day: { $dayOfMonth: "$createdAt" },
+            },
+            totalRevenue: { $sum: "$TOTAL_PRICE" },
+          },
+        },
+        {
+          $match: { totalRevenue: { $gt: 0 } }, // Chỉ lấy những ngày có doanh thu > 0
+        },
+        {
+          $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 },
+        },
+      ]);
 
-      return {
-        totalRevenue: revenueData[0].totalRevenue,
-        orderCount: revenueData[0].orderCount,
-      };
-    } catch (error) {
-      console.error("Error fetching daily revenue:", error);
-      throw error;
+      return { dailyRevenue: revenueByDay };
+    } else {
+      throw new Error(
+        "Cần nhập năm hoặc khoảng thời gian (startDate và endDate)"
+      );
     }
+  }
+
+  async getRevenue(timeFrame, selectedDate, selectedMonth, selectedYear) {
+    const matchStage = {};
+    console.log("Selected Year:", selectedYear);
+    console.log("Selected Month:", selectedMonth);
+    console.log("Selected Date:", selectedDate);
+    // Xác định điều kiện lọc dựa trên khung thời gian
+    if (timeFrame === "day" && selectedYear && selectedMonth && selectedDate) {
+      matchStage.createdAt = {
+        $gte: new Date(
+          `${selectedYear}-${selectedMonth}-${selectedDate}T00:00:00.000Z`
+        ),
+        $lt: new Date(
+          `${selectedYear}-${selectedMonth}-${selectedDate}T23:59:59.999Z`
+        ),
+      };
+    } else if (timeFrame === "month" && selectedYear && selectedMonth) {
+      matchStage.createdAt = {
+        $gte: new Date(`${selectedYear}-${selectedMonth}-01T00:00:00.000Z`),
+        $lt: new Date(`${selectedYear}-${selectedMonth}-31T23:59:59.999Z`),
+      };
+    } else if (timeFrame === "year" && selectedYear) {
+      matchStage.createdAt = {
+        $gte: new Date(`${selectedYear}-01-01T00:00:00.000Z`),
+        $lt: new Date(`${selectedYear}-12-31T23:59:59.999Z`),
+      };
+    }
+
+    // Pipeline để tính toán doanh thu
+    const revenueData = await BOOKING_MODEL.aggregate([
+      { $match: matchStage },
+      {
+        $project: {
+          createdAt: 1,
+          month: { $month: "$createdAt" },
+          year: { $year: "$createdAt" },
+          totalRevenue: {
+            $cond: {
+              if: { $in: ["$STATUS", ["Paid", "Complete"]] },
+              then: "$TOTAL_PRICE",
+              else: 0,
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id:
+            timeFrame === "day"
+              ? {
+                  day: { $dayOfMonth: "$createdAt" },
+                  month: "$month",
+                  year: "$year",
+                }
+              : timeFrame === "month"
+              ? { month: "$month", year: "$year" }
+              : { year: "$year" },
+          totalRevenue: { $sum: "$totalRevenue" },
+        },
+      },
+      {
+        $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 },
+      },
+    ]);
+
+    // Xử lý dữ liệu trả về
+    let formattedData;
+    if (timeFrame === "month" && selectedYear && !selectedMonth) {
+      // Nếu không có selectedMonth, trả về 12 tháng
+      const months = Array.from({ length: 12 }, (_, i) => i + 1);
+      const monthlyData = months.map((month) => {
+        const entry = revenueData.find((data) => data._id.month === month) || {
+          _id: { month, year: selectedYear },
+          totalRevenue: 0,
+        };
+        return {
+          date: `${entry._id.year}-${entry._id.month}`,
+          revenue: entry.totalRevenue,
+        };
+      });
+      formattedData = monthlyData;
+    } else {
+      // Chỉ trả về tháng đã chọn
+      formattedData = revenueData.map((entry) => ({
+        date:
+          timeFrame === "day"
+            ? `${entry._id.year}-${entry._id.month}-${entry._id.day}`
+            : timeFrame === "month"
+            ? `${entry._id.year}-${entry._id.month}`
+            : `${entry._id.year}`,
+        revenue: entry.totalRevenue,
+      }));
+    }
+
+    return { revenueData: formattedData };
+  }
+
+  async getBookingStatusData(
+    timeFrame,
+    selectedYear,
+    selectedMonth,
+    selectedDate
+  ) {
+    const matchStage = {
+      STATUS: { $in: ["Complete", "Canceled"] },
+    };
+
+    // Xác định điều kiện lọc theo khung thời gian
+    if (timeFrame === "day" && selectedYear && selectedMonth && selectedDate) {
+      matchStage.createdAt = {
+        $gte: new Date(
+          `${selectedYear}-${selectedMonth}-${selectedDate}T00:00:00.000Z`
+        ),
+        $lt: new Date(
+          `${selectedYear}-${selectedMonth}-${selectedDate}T23:59:59.999Z`
+        ),
+      };
+    } else if (timeFrame === "month" && selectedYear && selectedMonth) {
+      matchStage.createdAt = {
+        $gte: new Date(`${selectedYear}-${selectedMonth}-01T00:00:00.000Z`),
+        $lt: new Date(`${selectedYear}-${selectedMonth}-31T23:59:59.999Z`),
+      };
+    } else if (timeFrame === "year" && selectedYear) {
+      matchStage.createdAt = {
+        $gte: new Date(`${selectedYear}-01-01T00:00:00.000Z`),
+        $lt: new Date(`${selectedYear}-12-31T23:59:59.999Z`),
+      };
+    }
+
+    // Thực hiện pipeline để lấy dữ liệu trạng thái đặt hàng
+    const bookingStatusData = await BOOKING_MODEL.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: {
+            status: "$STATUS",
+            date:
+              timeFrame === "day"
+                ? { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+                : timeFrame === "month"
+                ? { $dateToString: { format: "%Y-%m", date: "$createdAt" } }
+                : { $year: "$createdAt" },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.date",
+          successfulCount: {
+            $sum: {
+              $cond: [{ $eq: ["$_id.status", "Complete"] }, "$count", 0],
+            },
+          },
+          canceledCount: {
+            $sum: {
+              $cond: [{ $eq: ["$_id.status", "Canceled"] }, "$count", 0],
+            },
+          },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Định dạng dữ liệu để trả về
+    const formattedData = bookingStatusData.map((entry) => ({
+      date: entry._id,
+      successfulCount: entry.successfulCount,
+      canceledCount: entry.canceledCount,
+    }));
+
+    return { bookingStatusData: formattedData };
   }
 }
 

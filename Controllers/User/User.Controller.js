@@ -356,6 +356,19 @@ class USER_CONTROLLER {
         res.status(500).json({ success: false, message: error.message })
       );
   };
+  getActiveUserCount = async (req, res) => {
+    try {
+      const count = await USER_SERVICE.getActiveUserCount();
+      res.status(200).json({ success: true, count });
+    } catch (error) {
+      console.error("Error getting active user count:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi khi lấy số lượng người dùng đã kích hoạt",
+        error: error.message,
+      });
+    }
+  };
 }
 
 module.exports = new USER_CONTROLLER();

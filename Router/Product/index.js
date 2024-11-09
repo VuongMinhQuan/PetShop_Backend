@@ -40,4 +40,9 @@ router.get("/search", PRODUCT_CONTROLLER.searchProductByName);
 router.post("/filter", PRODUCT_CONTROLLER.getProductsBySubType)
 router.get("/getProduct/:productId", PRODUCT_CONTROLLER.getProductById);
 router.get("/getAccompanyProduct/:productId", PRODUCT_CONTROLLER.getAccompanyingProducts);
+router.get(
+  "/totalCount",
+  PRODUCT_CONTROLLER.getTotalProductCountController
+);
+
 module.exports = router;

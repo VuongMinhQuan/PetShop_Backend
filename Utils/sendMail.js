@@ -80,9 +80,9 @@ class MailQueue {
         subject: "Xác nhận đặt hàng",
         html: content,
       });
-      console.log("Email xác nhận đặt phòng đã được gửi thành công!");
+      console.log("Email xác nhận đặt hàng đã được gửi thành công!");
     } catch (error) {
-      console.error("Lỗi khi gửi email xác nhận đặt phòng:", error);
+      console.error("Lỗi khi gửi email xác nhận đặt hàng:", error);
     }
   }
 

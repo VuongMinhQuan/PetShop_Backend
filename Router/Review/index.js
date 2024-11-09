@@ -17,4 +17,18 @@ router.post(
   verifyToken,
   REVIEW_CONTROLLER.getReviewByUserAndProduct
 );
+router.get("/totalReviews", REVIEW_CONTROLLER.getTotalAverageRating);
+router.get("/getAllReviews", REVIEW_CONTROLLER.getAllReviews);
+router.get(
+  "/getAllReviewsWithStatus",
+  REVIEW_CONTROLLER.getAllReviewsWithStatus
+);
+
+router.patch("/hide/:reviewId", REVIEW_CONTROLLER.hideReview);
+router.delete(
+  "/deleteReview/:reviewId",
+  verifyToken,
+  REVIEW_CONTROLLER.deleteReviewByUser
+);
+
 module.exports = router;

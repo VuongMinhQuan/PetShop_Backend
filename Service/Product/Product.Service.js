@@ -199,6 +199,12 @@ class PRODUCT_SERVICE {
 
     return await this.filterProductsBySubType(relatedSubTypes);
   }
+  // Tính tổng số sản phẩm không bị xóa trong csdl
+  async getTotalProductCount() {
+    return PRODUCT_MODEL.countDocuments({
+      IS_DELETED: { $in: [false, null] }, // Chỉ đếm các sản phẩm chưa bị xóa
+    });
+  }
 }
 
 module.exports = new PRODUCT_SERVICE();

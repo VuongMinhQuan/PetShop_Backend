@@ -294,6 +294,22 @@ class PRODUCT_CONTROLLER {
       });
     }
   }
+  async getTotalProductCountController(req, res) {
+    try {
+      const totalProductCount = await PRODUCT_SERVICE.getTotalProductCount();
+      return res.status(200).json({
+        success: true,
+        totalProductCount,
+      });
+    } catch (error) {
+      console.error("Error retrieving total product count:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Error retrieving total product count",
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = new PRODUCT_CONTROLLER();

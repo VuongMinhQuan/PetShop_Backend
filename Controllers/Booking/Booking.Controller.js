@@ -275,26 +275,136 @@ class BOOKING_CONTROLLER {
       });
     }
   }
-  async getDailyRevenue(req, res) {
+
+  async getMonthlyRevenue(req, res) {
+    const { year, month } = req.query;
+
+    // Kiểm tra xem `year` và `month` có được cung cấp hay không
+    if (!year || !month) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu tham số year hoặc month.",
+      });
+    }
+
     try {
-      const { date } = req.body;
+      // Gọi hàm từ service để tính doanh thu theo tháng
+      const revenue = await BOOKING_SERVICE.getMonthlyRevenue(
+        Number(year),
+        Number(month)
+      );
 
-      if (!date) {
-        return res
-          .status(400)
-          .json({ message: "Vui lòng cung cấp ngày cần tính doanh thu." });
-      }
-
-      const revenueData = await BOOKING_SERVICE.getDailyRevenue(date);
+      // Trả về kết quả nếu thành công
       return res.status(200).json({
-        message: `Doanh thu trong ngày ${date}`,
-        data: revenueData,
+        success: true,
+        message: "Lấy doanh thu tháng thành công",
+        data: { year, month, revenue },
       });
     } catch (error) {
-      console.error("Error in getDailyRevenue:", error);
+      console.error("Error in getMonthlyRevenue:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi khi lấy doanh thu tháng.",
+        error: error.message,
+      });
+    }
+  }
+
+  async getUserTotalSpent(req, res) {
+    try {
+      const userId = req.user_id; // Lấy `userId` từ token hoặc session
+      const totalSpent = await BOOKING_SERVICE.getUserTotalSpent(userId);
+
+      return res.status(200).json({
+        success: true,
+        message: "Lấy tổng tiền đã chi tiêu thành công.",
+        data: { totalSpent },
+      });
+    } catch (error) {
+      console.error("Error in getUserTotalSpent:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi khi lấy tổng tiền đã chi tiêu.",
+        error: error.message,
+      });
+    }
+  }
+  async getTotalRevenueByYearOrDateRange(req, res) {
+    const { year, startDate, endDate } = req.query;
+
+    if (!year && (!startDate || !endDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "Cần nhập năm hoặc khoảng thời gian (startDate và endDate).",
+      });
+    }
+
+    try {
+      // Gọi hàm service để lấy doanh thu
+      const revenue = await BOOKING_SERVICE.getTotalRevenueByYearOrDateRange(
+        Number(year),
+        startDate,
+        endDate
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Lấy doanh thu thành công.",
+        data: revenue,
+      });
+    } catch (error) {
+      console.error(
+        "Error in getTotalRevenueByYearOrDateRange:",
+        error.message
+      );
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi khi lấy doanh thu.",
+        error: error.message,
+      });
+    }
+  }
+  async getRevenue(req, res) {
+    try {
+      const { timeFrame, selectedDate, selectedMonth, selectedYear } =
+        req.query;
+
+      // Gọi service để lấy dữ liệu doanh thu
+      const revenueData = await BOOKING_SERVICE.getRevenue(
+        timeFrame,
+        selectedDate,
+        selectedMonth,
+        selectedYear
+      );
+
+      // Trả về dữ liệu cho client
+      return res.json({ data: revenueData });
+    } catch (error) {
+      console.error("Lỗi khi lấy dữ liệu doanh thu:", error);
+      return res.status(500).json({ error: "Lỗi khi lấy dữ liệu doanh thu" });
+    }
+  }
+
+  async getBookingStatusData(req, res) {
+    try {
+      const { timeFrame, selectedYear, selectedMonth, selectedDate } =
+        req.query;
+
+      // Gọi service để lấy dữ liệu trạng thái đặt phòng
+      const bookingStatusData = await BOOKING_SERVICE.getBookingStatusData(
+        timeFrame,
+        selectedYear,
+        selectedMonth,
+        selectedDate
+      );
+
+      // Trả về dữ liệu cho client
+      return res.json({ data: bookingStatusData });
+    } catch (error) {
+      console.error("Lỗi khi lấy dữ liệu trạng thái đặt phòng:", error);
       return res
         .status(500)
-        .json({ message: "Lỗi khi lấy doanh thu hàng ngày" });
+        .json({ error: "Lỗi khi lấy dữ liệu trạng thái đặt phòng" });
     }
   }
 }

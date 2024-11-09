@@ -161,11 +161,11 @@ class USER_SERVICE {
     switch (tabStatus) {
       case "1":
         // Người dùng chưa kích hoạt hoặc không bị chặn
-        query = { IS_ACTIVATED: false,  "IS_BLOCKED.CHECK": { $ne: true }};
+        query = { IS_ACTIVATED: false, "IS_BLOCKED.CHECK": { $ne: true } };
         break;
       case "2":
         // Người dùng đã kích hoạt và không bị chặn
-        query = { IS_ACTIVATED: true, "IS_BLOCKED.CHECK": { $ne: true }};
+        query = { IS_ACTIVATED: true, "IS_BLOCKED.CHECK": { $ne: true } };
         break;
       case "3":
         // Người dùng bị chặn
@@ -271,7 +271,7 @@ class USER_SERVICE {
     await user.save();
     return { success: true, message: "Sản phẩm đã được xóa khỏi yêu thích." };
   }
-  
+
   async getFavoriteProducts(userId) {
     const user = await USER_MODEL.findById(userId).populate("FAVORITES");
     if (!user) {
@@ -279,6 +279,17 @@ class USER_SERVICE {
     }
 
     return user.FAVORITES;
+  }
+  async getActiveUserCount() {
+    try {
+      const activeUserCount = await USER_MODEL.countDocuments({
+        IS_ACTIVATED: true,
+      });
+      return activeUserCount;
+    } catch (error) {
+      console.error("Error counting active users:", error);
+      throw new Error("Lỗi khi lấy số lượng người dùng đã kích hoạt");
+    }
   }
 }
 

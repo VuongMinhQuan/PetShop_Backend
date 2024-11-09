@@ -15,6 +15,7 @@ const ReviewSchema = new Schema(
     },
     PRODUCT_ID: {
       type: String,
+      ref: "Product",
       required: true,
     },
     RATING: {
