@@ -390,7 +390,7 @@ class BOOKING_CONTROLLER {
       const { timeFrame, selectedYear, selectedMonth, selectedDate } =
         req.query;
 
-      // Gọi service để lấy dữ liệu trạng thái đặt phòng
+      // Gọi service để lấy dữ liệu trạng thái đặt hàng
       const bookingStatusData = await BOOKING_SERVICE.getBookingStatusData(
         timeFrame,
         selectedYear,
@@ -401,11 +401,21 @@ class BOOKING_CONTROLLER {
       // Trả về dữ liệu cho client
       return res.json({ data: bookingStatusData });
     } catch (error) {
-      console.error("Lỗi khi lấy dữ liệu trạng thái đặt phòng:", error);
+      console.error("Lỗi khi lấy dữ liệu trạng thái đặt hàng:", error);
       return res
         .status(500)
-        .json({ error: "Lỗi khi lấy dữ liệu trạng thái đặt phòng" });
+        .json({ error: "Lỗi khi lấy dữ liệu trạng thái đặt hàng" });
     }
+  }
+  async getCompleteBookingsCount(req, res) {
+    const completeBookingsCount =
+      await BOOKING_SERVICE.getCompleteBookingsCount();
+
+    return res.status(200).json({
+      success: true,
+      message: "Lấy số lượng đơn hàng đã hoàn thành thành công.",
+      data: { completeBookingsCount },
+    });
   }
 }
 

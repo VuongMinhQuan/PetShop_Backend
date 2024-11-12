@@ -74,9 +74,7 @@ class REVIEW_CONTROLLER {
         bookingId
       );
       if (!review) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Không tìm thấy đánh giá" });
+        return res.status(200).json({ success: true, data: null });
       }
       return res.status(200).json({ success: true, data: review });
     } catch (error) {

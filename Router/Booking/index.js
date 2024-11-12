@@ -28,5 +28,7 @@ router.get(
   BOOKING_CONTROLLER.getRevenue
 );
 router.get("/bookingstatus", BOOKING_CONTROLLER.getBookingStatusData);
+router.get("/complete", BOOKING_CONTROLLER.getCompleteBookingsCount);
+
 
 module.exports = router;

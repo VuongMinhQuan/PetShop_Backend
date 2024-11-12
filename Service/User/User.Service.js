@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const USER_MODEL = require("../../Model/User/User.Model");
+const MailQueue = require("../../Utils/sendMail");
 
 class USER_SERVICE {
   async checkUserExists(email, phone) {
@@ -132,13 +133,35 @@ class USER_SERVICE {
   }
 
   async verifyOTPAndActivateUser(email, otp) {
-    const updatedUser = await USER_MODEL.findOneAndUpdate(
-      { EMAIL: email, "OTP.CODE": otp },
-      { $set: { IS_ACTIVATED: true, "OTP.$.CHECK_USING": true } },
-      { new: true }
+    // Tìm người dùng với email và OTP phù hợp
+    const user = await USER_MODEL.findOneAndUpdate(
+      {
+        EMAIL: email,
+        OTP: {
+          $elemMatch: {
+            CODE: otp,
+            TYPE: "verify_email",
+            CHECK_USING: false,
+          },
+        },
+      },
+      {
+        $set: {
+          "OTP.$[elem].CHECK_USING": true,
+          IS_ACTIVATED: true,
+        },
+      },
+      {
+        new: true,
+        arrayFilters: [{ "elem.CODE": otp, "elem.TYPE": "verify_email" }],
+      }
     );
 
-    return updatedUser;
+    if (!user) {
+      throw new Error("Mã OTP không chính xác hoặc đã hết hạn");
+    }
+
+    return user;
   }
 
   async resetPassword(email, newPassword, otp) {
@@ -234,6 +257,75 @@ class USER_SERVICE {
     );
 
     return foundUser;
+  }
+
+  async updateUser(userId, data) {
+    const user = await USER_MODEL.findById(userId);
+
+    if (!user) {
+      throw new Error("Không tìm thấy người dùng");
+    }
+
+    let emailChanged = false;
+
+    // Xử lý khi người dùng thay đổi email
+    if (data.EMAIL && data.EMAIL !== user.EMAIL) {
+      user.EMAIL = data.EMAIL; // Cập nhật email mới ngay lập tức
+      user.IS_ACTIVATED = false; // Đặt trạng thái tài khoản là chưa kích hoạt
+      emailChanged = true;
+
+      // Tạo OTP cho xác thực email mới
+      const otpType = "verify_email";
+      const otp = await MailQueue.randomOtp();
+      const expTime = new Date();
+      expTime.setMinutes(expTime.getMinutes() + 5);
+
+      // Lưu OTP vào mảng OTP
+      user.OTP.push({
+        TYPE: otpType,
+        CODE: otp,
+        TIME: Date.now(),
+        EXP_TIME: expTime,
+        CHECK_USING: false,
+      });
+
+      await user.save();
+
+      // Gửi email xác thực đến email mới
+      await MailQueue.addToMailQueue(user.EMAIL, otp, otpType);
+    }
+
+    // Xử lý khi người dùng thay đổi mật khẩu
+    if (data.CURRENT_PASSWORD && data.NEW_PASSWORD) {
+      const isPasswordValid = await this.checkPassword(
+        data.CURRENT_PASSWORD,
+        user.PASSWORD
+      );
+
+      if (!isPasswordValid) {
+        throw new Error("Mật khẩu hiện tại không chính xác");
+      }
+
+      user.PASSWORD = await this.hashPassword(data.NEW_PASSWORD);
+    }
+
+    // Cập nhật các trường khác
+    const fieldsToUpdate = ["FULLNAME", "PHONE_NUMBER", "ADDRESS", "GENDER"];
+    fieldsToUpdate.forEach((field) => {
+      if (data[field]) {
+        user[field] = data[field];
+      }
+    });
+
+    await user.save();
+
+    return {
+      message: emailChanged
+        ? "Vui lòng kiểm tra email mới để xác thực."
+        : "Cập nhật thông tin người dùng thành công.",
+      user: user.toObject(),
+      emailChanged,
+    };
   }
 
   async addFavoriteProduct(userId, productId) {

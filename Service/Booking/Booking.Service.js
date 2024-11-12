@@ -607,9 +607,10 @@ class BOOKING_SERVICE {
     console.log("Selected Year:", selectedYear);
     console.log("Selected Month:", selectedMonth);
     console.log("Selected Date:", selectedDate);
+
     // Xác định điều kiện lọc dựa trên khung thời gian
     if (timeFrame === "day" && selectedYear && selectedMonth && selectedDate) {
-      matchStage.createdAt = {
+      matchStage.updatedAt = {
         $gte: new Date(
           `${selectedYear}-${selectedMonth}-${selectedDate}T00:00:00.000Z`
         ),
@@ -618,12 +619,12 @@ class BOOKING_SERVICE {
         ),
       };
     } else if (timeFrame === "month" && selectedYear && selectedMonth) {
-      matchStage.createdAt = {
+      matchStage.updatedAt = {
         $gte: new Date(`${selectedYear}-${selectedMonth}-01T00:00:00.000Z`),
         $lt: new Date(`${selectedYear}-${selectedMonth}-31T23:59:59.999Z`),
       };
     } else if (timeFrame === "year" && selectedYear) {
-      matchStage.createdAt = {
+      matchStage.updatedAt = {
         $gte: new Date(`${selectedYear}-01-01T00:00:00.000Z`),
         $lt: new Date(`${selectedYear}-12-31T23:59:59.999Z`),
       };
@@ -634,9 +635,9 @@ class BOOKING_SERVICE {
       { $match: matchStage },
       {
         $project: {
-          createdAt: 1,
-          month: { $month: "$createdAt" },
-          year: { $year: "$createdAt" },
+          updatedAt: 1,
+          month: { $month: "$updatedAt" },
+          year: { $year: "$updatedAt" },
           totalRevenue: {
             $cond: {
               if: { $in: ["$STATUS", ["Paid", "Complete"]] },
@@ -651,7 +652,7 @@ class BOOKING_SERVICE {
           _id:
             timeFrame === "day"
               ? {
-                  day: { $dayOfMonth: "$createdAt" },
+                  day: { $dayOfMonth: "$updatedAt" },
                   month: "$month",
                   year: "$year",
                 }
@@ -708,9 +709,9 @@ class BOOKING_SERVICE {
       STATUS: { $in: ["Complete", "Canceled"] },
     };
 
-    // Xác định điều kiện lọc theo khung thời gian
+    // Xác định điều kiện lọc theo khung thời gian, sử dụng updatedAt
     if (timeFrame === "day" && selectedYear && selectedMonth && selectedDate) {
-      matchStage.createdAt = {
+      matchStage.updatedAt = {
         $gte: new Date(
           `${selectedYear}-${selectedMonth}-${selectedDate}T00:00:00.000Z`
         ),
@@ -719,12 +720,12 @@ class BOOKING_SERVICE {
         ),
       };
     } else if (timeFrame === "month" && selectedYear && selectedMonth) {
-      matchStage.createdAt = {
+      matchStage.updatedAt = {
         $gte: new Date(`${selectedYear}-${selectedMonth}-01T00:00:00.000Z`),
         $lt: new Date(`${selectedYear}-${selectedMonth}-31T23:59:59.999Z`),
       };
     } else if (timeFrame === "year" && selectedYear) {
-      matchStage.createdAt = {
+      matchStage.updatedAt = {
         $gte: new Date(`${selectedYear}-01-01T00:00:00.000Z`),
         $lt: new Date(`${selectedYear}-12-31T23:59:59.999Z`),
       };
@@ -739,10 +740,10 @@ class BOOKING_SERVICE {
             status: "$STATUS",
             date:
               timeFrame === "day"
-                ? { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+                ? { $dateToString: { format: "%Y-%m-%d", date: "$updatedAt" } }
                 : timeFrame === "month"
-                ? { $dateToString: { format: "%Y-%m", date: "$createdAt" } }
-                : { $year: "$createdAt" },
+                ? { $dateToString: { format: "%Y-%m", date: "$updatedAt" } }
+                : { $year: "$updatedAt" },
           },
           count: { $sum: 1 },
         },
@@ -773,6 +774,10 @@ class BOOKING_SERVICE {
     }));
 
     return { bookingStatusData: formattedData };
+  }
+
+  async getCompleteBookingsCount() {
+    return await BOOKING_MODEL.countDocuments({ STATUS: "Complete" });
   }
 }
 

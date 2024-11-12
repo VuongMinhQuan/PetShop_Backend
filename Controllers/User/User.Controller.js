@@ -63,24 +63,27 @@ class USER_CONTROLLER {
     const { email, otp } = req.body;
 
     try {
+      // Xác thực OTP
+      const isValid = await MailQueue.verifyOTP(email, otp, "verify_email");
+
+      if (!isValid) {
+        return res
+          .status(400)
+          .json({ errors: { otp: "Mã OTP không chính xác hoặc đã hết hạn" } });
+      }
+
+      // Kích hoạt lại tài khoản
       const user = await USER_SERVICE.verifyOTPAndActivateUser(email, otp);
 
       if (!user) {
         return res
           .status(404)
-          .json({ errors: { otp: "Mã OTP không chính xác" } });
+          .json({ errors: { email: "Không tìm thấy người dùng" } });
       }
 
-      const otpDetail = user.OTP.find((item) => item.CODE === otp);
-      const currentTime = Date.now();
-
-      if (otpDetail.EXP_TIME < currentTime) {
-        return res.status(400).json({ errors: { otp: "Mã OTP đã hết hạn" } });
-      }
-
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
-        message: "Kích hoạt người dùng thành công!",
+        message: "Xác thực email thành công! Tài khoản đã được kích hoạt.",
         user,
       });
     } catch (error) {
@@ -102,6 +105,7 @@ class USER_CONTROLLER {
       }
 
       return res.status(201).json({
+        success: true,
         message: "Vui lòng kiểm tra email để xác thực.",
       });
     } catch (error) {
@@ -143,7 +147,9 @@ class USER_CONTROLLER {
         return res.status(500).json({ error: "Invalid or expired OTP." });
       }
       await USER_SERVICE.resetPassword(email, newPassword, otp);
-      return res.status(200).json({ message: "Thay đổi mật khẩu thành công!" });
+      return res
+        .status(200)
+        .json({ success: true, message: "Thay đổi mật khẩu thành công!" });
     } catch (err) {
       res.status(500).json({ error: "Error resetting password" });
     }
@@ -307,6 +313,38 @@ class USER_CONTROLLER {
       res.status(500).json({ error: error.message });
     }
   };
+
+  async editUser(req, res) {
+    const userId = req.user_id;
+    const payload = req.body;
+
+    try {
+      // Gọi service để cập nhật thông tin người dùng
+      const result = await USER_SERVICE.updateUser(userId, payload);
+
+      // Nếu email đã thay đổi, thông báo cho người dùng kiểm tra email mới
+      if (result.emailChanged) {
+        return res.status(200).json({
+          success: true,
+          message: "Vui lòng kiểm tra email mới để xác thực.",
+        });
+      }
+
+      // Trả về kết quả thành công khi cập nhật hoàn tất
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+        user: result.user,
+      });
+    } catch (error) {
+      console.error("Lỗi khi chỉnh sửa người dùng:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Đã xảy ra lỗi khi cập nhật thông tin người dùng.",
+        error: error.message,
+      });
+    }
+  }
 
   getUserById = async (req, res) => {
     try {
