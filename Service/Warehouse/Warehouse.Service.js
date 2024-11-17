@@ -3,47 +3,68 @@ const PRODUCT_MODEL = require("../../Model/Product/Product.Model");
 const USER_MODEL = require("../../Model/User/User.Model");
 
 class WAREHOUSE_SERVICE {
-  async createWarehouseEntry(userId, warehouseDetails) {
-    // Tìm sản phẩm trong CSDL
-    const product = await PRODUCT_MODEL.findById(warehouseDetails.productId);
+  async createWarehouseEntry(userId, products, note) {
+    const productUpdates = [];
 
-    if (!product) {
-      throw new Error("Sản phẩm không tồn tại.");
-    }
+    // Tạo danh sách sản phẩm nhập
+    const productDetails = await Promise.all(
+      products.map(async (product) => {
+        const productData = await PRODUCT_MODEL.findById(product.PRODUCT_ID);
 
-    // Tính tổng giá trị
-    const totalValue = warehouseDetails.quantity * warehouseDetails.unitPrice;
+        if (!productData) {
+          throw new Error(
+            `Sản phẩm với ID ${product.PRODUCT_ID} không tồn tại.`
+          );
+        }
 
-    // Tạo phiếu nhập kho mới
+        const totalValue = product.QUANTITY * product.UNIT_PRICE;
+
+        // Cập nhật số lượng sản phẩm
+        productData.QUANTITY += product.QUANTITY;
+        await productData.save();
+
+        // Lưu thông tin cập nhật
+        productUpdates.push({
+          PRODUCT_NAME: productData.NAME,
+          QUANTITY_ADDED: product.QUANTITY,
+          UPDATED_PRODUCT_QUANTITY: productData.QUANTITY,
+        });
+
+        return {
+          PRODUCT_ID: product.PRODUCT_ID,
+          QUANTITY: product.QUANTITY,
+          UNIT_PRICE: product.UNIT_PRICE,
+          TOTAL_VALUE: totalValue,
+        };
+      })
+    );
+
+    // Tính tổng giá trị của phiếu nhập
+    const totalValue = productDetails.reduce(
+      (acc, product) => acc + product.TOTAL_VALUE,
+      0
+    );
+
+    // Tạo phiếu nhập kho
     const warehouseEntry = new WAREHOUSE_MODEL({
-      PRODUCT_ID: warehouseDetails.productId,
       USER_ID: userId,
-      QUANTITY: warehouseDetails.quantity,
-      UNIT_PRICE: warehouseDetails.unitPrice,
+      PRODUCTS: productDetails,
+      NOTE: note,
       TOTAL_VALUE: totalValue,
-      NOTE: warehouseDetails.note,
     });
 
-    // Lưu phiếu nhập vào CSDL
+    // Lưu phiếu nhập
     await warehouseEntry.save();
 
-    // Cập nhật số lượng sản phẩm trong kho
-    product.QUANTITY += warehouseDetails.quantity;
-    await product.save();
-
-    // Lấy thông tin người nhập
+    // Lấy thông tin người dùng
     const user = await USER_MODEL.findById(userId);
     if (!user) {
       throw new Error("Người dùng không tồn tại.");
     }
-
-    // Trả về thông tin chi tiết
     return {
-      PRODUCT_NAME: product.NAME,
       USER_NAME: user.FULLNAME,
-      QUANTITY_ADDED: warehouseDetails.quantity,
       TOTAL_VALUE: totalValue,
-      UPDATED_PRODUCT_QUANTITY: product.QUANTITY,
+      PRODUCT_UPDATES: productUpdates,
     };
   }
   async getAllWarehouseEntries(filters, pagination) {
@@ -52,7 +73,6 @@ class WAREHOUSE_SERVICE {
 
     const query = {};
 
-    if (productId) query.PRODUCT_ID = productId;
     if (userId) query.USER_ID = userId;
     if (startDate && endDate) {
       query.createdAt = {
@@ -62,7 +82,10 @@ class WAREHOUSE_SERVICE {
     }
 
     const entries = await WAREHOUSE_MODEL.find(query)
-      .populate("PRODUCT_ID", "NAME")
+      .populate({
+        path: "PRODUCTS.PRODUCT_ID",
+        select: "NAME PRICE",
+      })
       .populate("USER_ID", "FULLNAME")
       .skip((page - 1) * limit)
       .limit(limit)
@@ -70,23 +93,53 @@ class WAREHOUSE_SERVICE {
 
     const total = await WAREHOUSE_MODEL.countDocuments(query);
 
+    // Lọc phiếu nhập theo sản phẩm nếu có `productId`
+    let filteredEntries = entries;
+    if (productId) {
+      filteredEntries = entries.filter((entry) =>
+        entry.PRODUCTS.some(
+          (product) =>
+            product.PRODUCT_ID &&
+            product.PRODUCT_ID._id.toString() === productId
+        )
+      );
+    }
+
     return {
-      entries,
-      total,
+      entries: filteredEntries,
+      total: filteredEntries.length,
       page,
       limit,
     };
   }
   async getWarehouseEntryById(entryId) {
+    // Tìm phiếu nhập kho theo ID
     const entry = await WAREHOUSE_MODEL.findById(entryId)
-      .populate("PRODUCT_ID", "NAME")
-      .populate("USER_ID", "FULLNAME");
+      .populate({
+        path: "PRODUCTS.PRODUCT_ID",
+        select: "NAME PRICE", // Lấy tên và giá sản phẩm
+      })
+      .populate("USER_ID", "FULLNAME"); // Lấy thông tin người nhập
 
     if (!entry) {
       throw new Error("Phiếu nhập không tồn tại.");
     }
 
-    return entry;
+    // Trả về chi tiết phiếu nhập
+    return {
+      _id: entry._id,
+      USER_NAME: entry.USER_ID.FULLNAME || "N/A",
+      PRODUCTS: entry.PRODUCTS.map((product) => ({
+        PRODUCT_ID: product.PRODUCT_ID._id,
+        PRODUCT_NAME: product.PRODUCT_ID.NAME,
+        QUANTITY: product.QUANTITY,
+        UNIT_PRICE: product.UNIT_PRICE,
+        TOTAL_VALUE: product.TOTAL_VALUE,
+      })),
+      NOTE: entry.NOTE,
+      TOTAL_VALUE: entry.TOTAL_VALUE,
+      CREATED_AT: entry.createdAt,
+    };
   }
 }
 

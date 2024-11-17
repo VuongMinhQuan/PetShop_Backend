@@ -15,11 +15,6 @@ router.get(
   verifyToken,
   WAREHOUSE_CONTROLLER.getAllWarehouseEntries
 );
-router.get(
-  "/getWarehouseEntryById/:entryId",
-  verifyToken,
-  WAREHOUSE_CONTROLLER.getWarehouseEntryById
-);
-
+router.get("/getWarehouseById/:entryId", WAREHOUSE_CONTROLLER.getWarehouseEntryById);
 
 module.exports = router;

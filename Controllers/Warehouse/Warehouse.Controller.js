@@ -3,25 +3,23 @@ const WAREHOUSE_SERVICE = require("../../Service/Warehouse/Warehouse.Service");
 class WAREHOUSE_CONTROLLER {
   async createWarehouseEntry(req, res) {
     try {
-      const userId = req.user_id;
-      const warehouseDetails = req.body; // Lấy thông tin nhập kho từ body request
-      console.log(warehouseDetails);
+      const userId = req.user_id; // Lấy ID người dùng từ token hoặc request
+      const { PRODUCTS, NOTE } = req.body; // Lấy danh sách sản phẩm và ghi chú từ body
 
-      // Gọi service để xử lý tạo phiếu nhập kho
       const warehouseEntry = await WAREHOUSE_SERVICE.createWarehouseEntry(
         userId,
-        warehouseDetails
+        PRODUCTS,
+        NOTE
       );
 
-      // Trả về kết quả thành công
-      return res.status(201).json({
+      res.status(201).json({
         success: true,
         message: "Tạo phiếu nhập kho thành công.",
         data: warehouseEntry,
       });
     } catch (error) {
       console.error("Error in createWarehouseEntry:", error.message);
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         message: "Lỗi khi tạo phiếu nhập kho.",
         error: error.message,
@@ -53,20 +51,20 @@ class WAREHOUSE_CONTROLLER {
   }
   async getWarehouseEntryById(req, res) {
     try {
-      const { entryId } = req.params;
+      const { entryId } = req.params; // Lấy ID phiếu nhập từ URL
 
       const entry = await WAREHOUSE_SERVICE.getWarehouseEntryById(entryId);
 
       res.status(200).json({
         success: true,
-        message: "Lấy thông tin phiếu nhập thành công.",
+        message: "Lấy chi tiết phiếu nhập thành công.",
         data: entry,
       });
     } catch (error) {
       console.error("Error in getWarehouseEntryById:", error.message);
       res.status(404).json({
         success: false,
-        message: "Lỗi khi lấy thông tin phiếu nhập.",
+        message: "Lỗi khi lấy chi tiết phiếu nhập.",
         error: error.message,
       });
     }
