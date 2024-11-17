@@ -417,6 +417,38 @@ class BOOKING_CONTROLLER {
       data: { completeBookingsCount },
     });
   }
+  async getMonthlyRevenueComparison(req, res) {
+    try {
+      const { year, month } = req.query;
+
+      // Kiểm tra tham số đầu vào
+      if (!year || !month) {
+        return res.status(400).json({
+          success: false,
+          message: "Thiếu tham số year hoặc month.",
+        });
+      }
+
+      // Gọi service để lấy doanh thu
+      const revenueData = await BOOKING_SERVICE.getMonthlyRevenueComparison(
+        Number(year),
+        Number(month)
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Lấy doanh thu so với tháng trước thành công.",
+        data: revenueData,
+      });
+    } catch (error) {
+      console.error("Error in getMonthlyRevenueComparison:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi khi lấy doanh thu so với tháng trước.",
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = new BOOKING_CONTROLLER();

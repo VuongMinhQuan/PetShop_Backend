@@ -685,15 +685,17 @@ class BOOKING_SERVICE {
       formattedData = monthlyData;
     } else {
       // Chỉ trả về tháng đã chọn
-      formattedData = revenueData.map((entry) => ({
-        date:
-          timeFrame === "day"
-            ? `${entry._id.year}-${entry._id.month}-${entry._id.day}`
-            : timeFrame === "month"
-            ? `${entry._id.year}-${entry._id.month}`
-            : `${entry._id.year}`,
-        revenue: entry.totalRevenue,
-      }));
+      formattedData = revenueData
+        .map((entry) => ({
+          date:
+            timeFrame === "day"
+              ? `${entry._id.year}-${entry._id.month}-${entry._id.day}`
+              : timeFrame === "month"
+              ? `${entry._id.year}-${entry._id.month}`
+              : `${entry._id.year}`,
+          revenue: entry.totalRevenue,
+        }))
+        .filter((entry) => entry.revenue > 0);
     }
 
     return { revenueData: formattedData };
@@ -778,6 +780,30 @@ class BOOKING_SERVICE {
 
   async getCompleteBookingsCount() {
     return await BOOKING_MODEL.countDocuments({ STATUS: "Complete" });
+  }
+  async getMonthlyRevenueComparison(year, month) {
+    const currentMonthRevenue = await this.getMonthlyRevenue(year, month); // Doanh thu tháng hiện tại
+    const lastMonth = month === 1 ? 12 : month - 1; // Tháng trước
+    const lastMonthYear = month === 1 ? year - 1 : year; // Năm trước nếu tháng là tháng 1
+    const lastMonthRevenue = await this.getMonthlyRevenue(
+      lastMonthYear,
+      lastMonth
+    ); // Doanh thu tháng trước
+
+    // Tính tỷ lệ thay đổi
+    const changePercentage =
+      lastMonthRevenue > 0
+        ? (
+            ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) *
+            100
+          ).toFixed(2)
+        : 0;
+
+    return {
+      currentMonthRevenue,
+      lastMonthRevenue,
+      changePercentage,
+    };
   }
 }
 
