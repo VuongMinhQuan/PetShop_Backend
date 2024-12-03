@@ -449,6 +449,43 @@ class BOOKING_CONTROLLER {
       });
     }
   }
+  async getTopSellingProducts(req, res) {
+    try {
+      const limit = parseInt(req.query.limit) || 5; // Lấy số lượng sản phẩm từ query, mặc định là 5
+      const topProducts = await BOOKING_SERVICE.getTopSellingProducts(limit);
+
+      return res.status(200).json({
+        success: true,
+        message: "Lấy danh sách sản phẩm bán chạy nhất thành công.",
+        data: topProducts,
+      });
+    } catch (error) {
+      console.error("Error in getTopSellingProducts:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi khi lấy danh sách sản phẩm bán chạy nhất.",
+        error: error.message,
+      });
+    }
+  }
+  async getLastBookingAddress(req, res) {
+    try {
+      const userId = req.user.id; // Giả sử ID người dùng được lấy từ token
+
+      // Gọi phương thức trong service để lấy địa chỉ
+      const lastAddress = await BOOKING_SERVICE.getLastBookingAddress(userId);
+
+      return res.status(200).json({
+        success: true,
+        data: lastAddress,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Lỗi khi lấy địa chỉ đơn hàng.",
+      });
+    }
+  }
 }
 
 module.exports = new BOOKING_CONTROLLER();

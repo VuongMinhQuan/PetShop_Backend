@@ -1,6 +1,7 @@
 const WAREHOUSE_MODEL = require("../../Model/Warehouse/Warehouse.Model");
 const PRODUCT_MODEL = require("../../Model/Product/Product.Model");
 const USER_MODEL = require("../../Model/User/User.Model");
+const moment = require("moment");
 
 class WAREHOUSE_SERVICE {
   async createWarehouseEntry(userId, products, note) {
@@ -140,6 +141,33 @@ class WAREHOUSE_SERVICE {
       TOTAL_VALUE: entry.TOTAL_VALUE,
       CREATED_AT: entry.createdAt,
     };
+  }
+  async getTotalValueForCurrentMonth() {
+    // Lấy tháng và năm hiện tại
+    const currentMonth = moment().startOf("month");
+    const nextMonth = moment(currentMonth).add(1, "month");
+
+    // Tạo query để lấy các phiếu nhập trong tháng hiện tại
+    const query = {
+      createdAt: {
+        $gte: currentMonth.toDate(), // Ngày bắt đầu tháng
+        $lt: nextMonth.toDate(), // Ngày bắt đầu tháng tiếp theo
+      },
+    };
+
+    // Tính tổng TOTAL_VALUE của các phiếu nhập
+    const totalValue = await WAREHOUSE_MODEL.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          totalValue: { $sum: "$TOTAL_VALUE" }, // Tính tổng TOTAL_VALUE
+        },
+      },
+    ]);
+
+    // Trả về tổng giá trị hoặc 0 nếu không có phiếu nhập
+    return totalValue.length > 0 ? totalValue[0].totalValue : 0;
   }
 }
 

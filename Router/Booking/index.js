@@ -33,7 +33,11 @@ router.get(
   "/comparison",
   BOOKING_CONTROLLER.getMonthlyRevenueComparison
 );
-
-
+router.get("/topselling", BOOKING_CONTROLLER.getTopSellingProducts);
+router.post(
+  "/getLastBookingAddress",
+  verifyToken,
+  BOOKING_CONTROLLER.getLastBookingAddress
+);
 
 module.exports = router;

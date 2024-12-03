@@ -69,6 +69,26 @@ class WAREHOUSE_CONTROLLER {
       });
     }
   }
+  async getTotalValueForCurrentMonth(req, res) {
+    try {
+      const totalValue = await WAREHOUSE_SERVICE.getTotalValueForCurrentMonth();
+
+      res.status(200).json({
+        success: true,
+        message: "Tổng giá trị phiếu nhập trong tháng hiện tại.",
+        data: {
+          totalValue,
+        },
+      });
+    } catch (error) {
+      console.error("Error in getTotalValueForCurrentMonth:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi khi lấy tổng giá trị phiếu nhập.",
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = new WAREHOUSE_CONTROLLER();

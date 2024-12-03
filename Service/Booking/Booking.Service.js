@@ -92,13 +92,17 @@ class BOOKING_SERVICE {
       // Cộng tổng giá sản phẩm vào tổng giá booking
       totalPrice += totalPriceProduct;
     }
-
+     let bookingStatus = "NotYetPaid";
+     if (paymentMethod === "VNPay") {
+       // Nếu phương thức thanh toán là VNPay, đặt trạng thái là "Canceled"
+       bookingStatus = "Canceled";
+     }
     // Tạo booking mới với danh sách sản phẩm và lấy thông tin người dùng nếu thiếu
     const booking = new BOOKING_MODEL({
       USER_ID: userId,
       LIST_PRODUCT: listProducts, // Danh sách các sản phẩm đã đặt
       TOTAL_PRICE: totalPrice, // Tổng giá cho tất cả các sản phẩm
-      STATUS: "NotYetPaid", // Trạng thái booking ban đầu
+      STATUS: bookingStatus, // Trạng thái booking ban đầu
       CUSTOMER_PHONE:
         productsDetails[0].CUSTOMER_PHONE || userProfile.PHONE_NUMBER, // Nếu không có, lấy từ profile
       CUSTOMER_NAME: productsDetails[0].CUSTOMER_NAME || userProfile.FULLNAME,
@@ -803,6 +807,82 @@ class BOOKING_SERVICE {
       currentMonthRevenue,
       lastMonthRevenue,
       changePercentage,
+    };
+  }
+  async getTopSellingProducts(limit = 5) {
+    try {
+      const topProducts = await BOOKING_MODEL.aggregate([
+        {
+          $match: {
+            STATUS: "Complete", // Chỉ lấy các booking có trạng thái "Complete"
+          },
+        },
+        {
+          $unwind: "$LIST_PRODUCT", // Tách từng sản phẩm trong danh sách LIST_PRODUCT
+        },
+        {
+          $group: {
+            _id: "$LIST_PRODUCT.PRODUCT_ID", // Nhóm theo ID sản phẩm
+            totalQuantity: { $sum: "$LIST_PRODUCT.QUANTITY" }, // Tính tổng số lượng bán ra của từng sản phẩm
+            totalRevenue: { $sum: "$LIST_PRODUCT.TOTAL_PRICE_PRODUCT" }, // Tính tổng doanh thu từ sản phẩm
+          },
+        },
+        {
+          $lookup: {
+            from: "products", // Tên collection sản phẩm trong cơ sở dữ liệu
+            localField: "_id", // ID sản phẩm trong group
+            foreignField: "_id", // ID sản phẩm trong collection products
+            as: "productDetails", // Đặt tên cho dữ liệu liên kết
+          },
+        },
+        {
+          $unwind: "$productDetails", // Giải nén mảng productDetails để lấy thông tin chi tiết sản phẩm
+        },
+        {
+          $project: {
+            _id: 1,
+            productName: "$productDetails.NAME", // Lấy tên sản phẩm
+            totalQuantity: 1, // Số lượng bán ra
+            totalRevenue: 1, // Doanh thu từ sản phẩm
+            images: "$productDetails.IMAGES", // Lấy hình ảnh của sản phẩm
+          },
+        },
+        {
+          $sort: { totalQuantity: -1 }, // Sắp xếp theo số lượng bán ra giảm dần
+        },
+        {
+          $limit: limit, // Giới hạn số sản phẩm trả về
+        },
+      ]);
+
+      return topProducts; // Trả về danh sách các sản phẩm bán chạy nhất
+    } catch (error) {
+      console.error("Lỗi khi lấy sản phẩm bán chạy nhất:", error.message);
+      throw new Error("Không thể lấy danh sách sản phẩm bán chạy nhất.");
+    }
+  }
+  async getLastBookingAddress(userId) {
+    // Tìm đơn hàng gần nhất với trạng thái "Hoàn thành" hoặc "Đã thanh toán"
+    const lastBooking = await BOOKING_MODEL.findOne({
+      USER_ID: userId,
+      STATUS: { $in: ["Complete", "Paid"] }, // Trạng thái đã thanh toán hoặc hoàn thành
+    }).sort({ updatedAt: -1 }); // Sắp xếp theo thời gian cập nhật gần nhất
+
+    if (!lastBooking) {
+      throw new Error("Không tìm thấy đơn hàng gần nhất.");
+    }
+
+    // Trả về thông tin địa chỉ giao hàng
+    return {
+      CUSTOMER_NAME: lastBooking.CUSTOMER_NAME,
+      CUSTOMER_PHONE: lastBooking.CUSTOMER_PHONE,
+      CUSTOMER_ADDRESS: lastBooking.CUSTOMER_ADDRESS,
+      ProvinceID: lastBooking.ProvinceID,
+      ProvinceName: lastBooking.ProvinceName,
+      DistrictID: lastBooking.DistrictID,
+      DistrictName: lastBooking.DistrictName,
+      WardCode: lastBooking.WardCode,
+      WardName: lastBooking.WardName,
     };
   }
 }

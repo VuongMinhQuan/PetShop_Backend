@@ -99,9 +99,21 @@ class MailQueue {
       const otp = await this.randomOtp();
       const expTime = new Date();
       expTime.setMinutes(expTime.getMinutes() + 5);
-
-      await USER_SERVICE.updateUserOTP(email, otp, otpType, expTime);
-
+      await USER_MODEL.findOneAndUpdate(
+        { EMAIL: email },
+        {
+          $push: {
+            OTP: {
+              TYPE: otpType,
+              CODE: otp,
+              TIME: Date.now(),
+              EXP_TIME: expTime,
+              CHECK_USING: false,
+            },
+          },
+        },
+        { new: true }
+      );
       await this.addToMailQueue(email, otp, otpType);
       return true;
     } catch (error) {

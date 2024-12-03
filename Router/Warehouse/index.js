@@ -16,5 +16,8 @@ router.get(
   WAREHOUSE_CONTROLLER.getAllWarehouseEntries
 );
 router.get("/getWarehouseById/:entryId", WAREHOUSE_CONTROLLER.getWarehouseEntryById);
-
+router.get(
+  "/value-currentmonth",
+  WAREHOUSE_CONTROLLER.getTotalValueForCurrentMonth
+);
 module.exports = router;

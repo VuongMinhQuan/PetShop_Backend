@@ -137,7 +137,7 @@ class PaymentController {
             status: "Cancelled", // Cập nhật trạng thái "Cancelled"
             bookingId: orderId,
           });
-
+          
           return res.status(400).json({
             statusCode: 400,
             msg: "Giao dịch không thành công",
@@ -151,11 +151,9 @@ class PaymentController {
         });
       }
     } catch (error) {
-      return res.status(500).json({
-        statusCode: 500,
-        msg: "Có lỗi xảy ra",
-        error: error.message,
-      });
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/user/history?success=true`
+      );
     }
   }
 
